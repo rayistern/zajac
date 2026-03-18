@@ -1,0 +1,7 @@
+{
+  "specPath": "merkos-rambam-frontend/specs/frontend-product-spec-v2.md",
+  "assetsPath": "merkos-rambam-frontend/assets",
+  "referencePath": "merkos-rambam-frontend/reference",
+  "existingMockupPath": "merkos-rambam-frontend/mockups/mockup-v4-stable.html",
+  "outputPath": "merkos-rambam-frontend/mockups/mockup-v6-player.html"
+}

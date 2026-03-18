@@ -1,0 +1,2183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Merkos Rambam — Now Playing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Noto+Sans+Hebrew:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ========================================
+   DESIGN TOKENS
+   ======================================== */
+:root {
+  --bg: #121212;
+  --surface: #181818;
+  --elevated: #282828;
+  --green: #1DB954;
+  --green-dim: rgba(29,185,84,0.15);
+  --green-border: rgba(29,185,84,0.3);
+  --white: #FFFFFF;
+  --grey: #B3B3B3;
+  --grey-dim: #535353;
+  --glass: rgba(24,24,24,0.8);
+  --glass-heavy: rgba(12,12,12,0.94);
+  --divider: rgba(255,255,255,0.06);
+  --radius-sm: 12px;
+  --radius-lg: 20px;
+  --font-ui: 'Plus Jakarta Sans', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-hebrew: 'Noto Sans Hebrew', sans-serif;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --nav-height: 72px;
+}
+
+/* ========================================
+   RESET & BASE
+   ======================================== */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: var(--bg);
+  color: var(--white);
+  font-family: var(--font-body);
+  overflow-x: hidden;
+  min-height: 100vh;
+  padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + 12px);
+}
+
+img { display: block; }
+
+button {
+  border: none;
+  background: none;
+  color: inherit;
+  font-family: inherit;
+  cursor: pointer;
+  outline: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+a { color: inherit; text-decoration: none; }
+
+/* ========================================
+   TOUCH FEEDBACK UTILITY
+   ======================================== */
+.tappable {
+  transition: transform 0.15s ease;
+  cursor: pointer;
+}
+.tappable:active {
+  transform: scale(0.97);
+}
+.player__raise-hand.tappable:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+/* ========================================
+   1. TOP BAR — Sticky Glass
+   ======================================== */
+.top-bar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  padding-top: max(12px, env(safe-area-inset-top, 12px));
+  background: var(--glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.top-bar__back,
+.top-bar__share {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.3s ease;
+}
+.top-bar__back:hover,
+.top-bar__share:hover {
+  background: rgba(255,255,255,0.1);
+}
+
+.top-bar__back svg,
+.top-bar__share svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: var(--white);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.top-bar__center {
+  text-align: center;
+  flex: 1;
+}
+
+.top-bar__label {
+  font-family: var(--font-ui);
+  font-size: 9px;
+  font-weight: 800;
+  color: var(--green);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 2px;
+}
+
+.top-bar__title {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--white);
+}
+
+/* ========================================
+   2. HERO CONTENT STAGE
+   ======================================== */
+.hero {
+  position: relative;
+  width: 100%;
+  height: 70vh;
+  overflow: hidden;
+  background: #121212;
+}
+
+/* Artifact slides */
+.hero__slides {
+  position: absolute;
+  inset: 0;
+}
+
+.hero__slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  background: #121212;
+  pointer-events: none;
+}
+.hero__slide.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+/* FIX 1: object-fit: contain with dark background */
+.hero__slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #121212;
+}
+
+/* Artifact 2: Temple Diagram */
+.hero__slide--diagram {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(160deg, #0d1117 0%, #111820 50%, #0a1628 100%);
+  padding: 24px;
+}
+
+.diagram-card {
+  width: 100%;
+  max-width: 360px;
+}
+
+.diagram-card__header {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.diagram-card__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  font-family: var(--font-ui);
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--green);
+}
+
+.diagram-card__badge-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--green);
+  border-radius: 50%;
+}
+
+.diagram-card__title {
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--white);
+}
+
+.diagram-card__visual {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/10;
+}
+
+/* Artifact 3: Timeline slide — internal era pills */
+.hero__slide--timeline {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #121212;
+  position: relative;
+}
+
+.hero__slide--timeline .timeline-inner-image {
+  position: absolute;
+  inset: 0;
+}
+.hero__slide--timeline .timeline-inner-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #121212;
+  opacity: 0;
+  position: absolute;
+  inset: 0;
+  transition: opacity 0.6s ease;
+}
+.hero__slide--timeline .timeline-inner-image img.active {
+  opacity: 1;
+}
+
+/* Timeline era pills and caption — internal to artifact 3 */
+.timeline-controls {
+  position: absolute;
+  bottom: 120px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.timeline {
+  display: flex;
+  gap: 8px;
+}
+
+.timeline-caption {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: rgba(255,255,255,0.55);
+  text-align: center;
+  letter-spacing: 0.3px;
+  transition: opacity 0.4s ease;
+  white-space: nowrap;
+}
+
+.timeline__pill {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1.5px solid var(--grey-dim);
+  background: rgba(0,0,0,0.5);
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: var(--white);
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  text-transform: uppercase;
+  backdrop-filter: blur(8px);
+}
+.timeline__pill span {
+  display: block;
+  font-size: 8px;
+  font-weight: 500;
+  opacity: 0.5;
+  margin-top: 1px;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.timeline__pill[data-era="mishkan"] {
+  --era-color: #1D9E75;
+}
+.timeline__pill[data-era="first"] {
+  --era-color: #378ADD;
+}
+.timeline__pill[data-era="second"] {
+  --era-color: #D85A30;
+}
+
+.timeline__pill.active {
+  border-color: var(--era-color);
+  background: color-mix(in srgb, var(--era-color) 25%, rgba(0,0,0,0.5));
+}
+.timeline__pill:not(.active):hover {
+  border-color: rgba(255,255,255,0.3);
+}
+
+/* Gradient fade at bottom */
+.hero__gradient {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 200px;
+  background: linear-gradient(transparent, var(--bg));
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* FIX 4: PiP placeholder — bigger, video-like */
+.hero__pip {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  width: 130px;
+  height: 84px;
+  background: #1a1a1a;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: var(--radius-sm);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.5);
+}
+.hero__pip .pip-bg-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+/* Subtle vignette for video look */
+.hero__pip::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.4) 100%);
+  pointer-events: none;
+}
+.hero__pip .pip-play-icon {
+  width: 32px;
+  height: 32px;
+  background: rgba(0,0,0,0.6);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  border: 1.5px solid rgba(255,255,255,0.2);
+}
+.hero__pip .pip-play-icon svg {
+  width: 14px;
+  height: 14px;
+  fill: rgba(255,255,255,0.8);
+  margin-left: 2px;
+}
+/* Camera label */
+.hero__pip .pip-label {
+  position: absolute;
+  bottom: 5px;
+  left: 7px;
+  font-family: var(--font-ui);
+  font-size: 7px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: rgba(255,255,255,0.35);
+  z-index: 2;
+}
+/* Red rec dot */
+.hero__pip .pip-rec {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 6px;
+  height: 6px;
+  background: #e74c3c;
+  border-radius: 50%;
+  z-index: 2;
+  animation: pip-blink 2s ease-in-out infinite;
+}
+
+@keyframes pip-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* Text toggle */
+.hero__text-toggle {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  transition: background 0.3s ease;
+}
+.hero__text-toggle:hover {
+  background: rgba(0,0,0,0.75);
+}
+.hero__text-toggle svg {
+  width: 16px;
+  height: 16px;
+  fill: var(--white);
+  opacity: 0.85;
+}
+.hero__text-toggle.off svg {
+  opacity: 0.35;
+}
+
+/* Indicator dots — FIX 2: represent 3 artifact types */
+.hero__dots {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  z-index: 5;
+}
+
+.hero__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--white);
+  opacity: 0.2;
+  transition: all 0.4s ease;
+  cursor: pointer;
+}
+.hero__dot.active {
+  width: 20px;
+  background: var(--green);
+  opacity: 1;
+}
+
+/* FIX 3: Subtitle/Karaoke — condensed, bilingual side-by-side, above dots */
+.hero__karaoke {
+  position: absolute;
+  bottom: 40px;
+  left: 0;
+  right: 0;
+  z-index: 4;
+  padding: 0 20px;
+  transition: opacity 0.4s ease;
+}
+.hero__karaoke.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.hero__karaoke .subtitle-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 3px;
+  transition: opacity 0.4s ease, color 0.4s ease;
+}
+
+.hero__karaoke .subtitle-en {
+  flex: 1;
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.45;
+  color: rgba(255,255,255,0.85);
+  max-width: 48%;
+}
+
+.hero__karaoke .subtitle-he {
+  flex: 1;
+  text-align: right;
+  direction: rtl;
+  font-family: var(--font-hebrew);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.45;
+  color: rgba(255,255,255,0.85);
+  max-width: 48%;
+}
+
+.hero__karaoke .subtitle-row.past .subtitle-en,
+.hero__karaoke .subtitle-row.past .subtitle-he {
+  opacity: 0.2;
+  transition: opacity 0.5s ease;
+}
+.hero__karaoke .subtitle-row.cur .subtitle-en,
+.hero__karaoke .subtitle-row.cur .subtitle-he {
+  color: var(--white);
+  text-shadow: 0 0 16px rgba(255,255,255,0.3);
+  transition: opacity 0.5s ease, text-shadow 0.5s ease;
+}
+.hero__karaoke .subtitle-row.next .subtitle-en,
+.hero__karaoke .subtitle-row.next .subtitle-he {
+  opacity: 0.35;
+  transition: opacity 0.5s ease;
+}
+
+/* ========================================
+   4. PLAYER CONTROLS
+   ======================================== */
+.player {
+  padding: 20px 20px 0;
+}
+
+/* Progress scrubber */
+.player__scrubber {
+  position: relative;
+  width: 100%;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.player__track {
+  width: 100%;
+  height: 3px;
+  background: var(--elevated);
+  border-radius: 2px;
+  position: relative;
+  overflow: visible;
+}
+
+.player__fill {
+  height: 100%;
+  width: 33%;
+  background: var(--white);
+  border-radius: 2px;
+  position: relative;
+}
+
+.player__thumb {
+  position: absolute;
+  right: -6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  background: var(--white);
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.player__scrubber:hover .player__thumb {
+  opacity: 1;
+}
+
+.player__times {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 10px;
+  color: var(--grey-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* FIX 5: Transport — centered controls with raise hand on the right */
+.player__transport {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 20px;
+  position: relative;
+  padding: 0 72px;  /* symmetric padding — raise hand sits in right space */
+}
+
+.player__transport-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  flex: 1;
+}
+
+.player__speed-pill {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--grey);
+  background: var(--elevated);
+  padding: 6px 12px;
+  border-radius: 16px;
+  min-width: 38px;
+  text-align: center;
+  transition: background 0.3s ease;
+}
+.player__speed-pill:hover {
+  background: rgba(255,255,255,0.12);
+}
+
+.player__skip {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.3s ease;
+}
+.player__skip:hover {
+  background: rgba(255,255,255,0.06);
+}
+.player__skip svg {
+  width: 22px;
+  height: 22px;
+  fill: var(--white);
+}
+
+.player__play {
+  width: 56px;
+  height: 56px;
+  background: var(--white);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+  flex-shrink: 0;
+  box-shadow: 0 8px 24px rgba(29,185,84,0.3);
+}
+.player__play:hover {
+  transform: scale(1.06);
+  background: #f0f0f0;
+  box-shadow: 0 10px 32px rgba(29,185,84,0.4);
+}
+.player__play svg {
+  width: 22px;
+  height: 22px;
+  fill: var(--bg);
+  margin-left: 3px;
+}
+
+.player__raise-hand {
+  width: 48px;
+  height: 48px;
+  background: var(--green-dim);
+  border: 1.5px solid var(--green-border);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  box-shadow: 0 4px 12px rgba(29,185,84,0.2);
+}
+.player__raise-hand:hover {
+  background: rgba(29,185,84,0.25);
+  box-shadow: 0 6px 18px rgba(29,185,84,0.3);
+}
+.player__raise-hand .wave-emoji {
+  display: inline-block;
+  animation: wave 2.5s ease-in-out 3s infinite;
+}
+
+/* Action row */
+.player__actions {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin-top: 24px;
+  padding-bottom: 8px;
+}
+
+.player__action {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: var(--grey-dim);
+  font-size: 10px;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+.player__action:hover {
+  color: var(--grey);
+}
+.player__action svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* ========================================
+   5. BELOW-FOLD CONTENT — FIX 6
+   ======================================== */
+.content {
+  padding: 0 20px;
+}
+
+.content__divider {
+  height: 1px;
+  background: var(--divider);
+  margin: 24px 0;
+}
+
+/* Currently playing indicator */
+.content__now-playing {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--green);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.content__now-playing .now-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--green);
+  border-radius: 50%;
+  animation: sparkp 2s ease-in-out infinite;
+}
+
+/* Tabs */
+.content__tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--divider);
+  margin-bottom: 24px;
+}
+
+.content__tab {
+  flex: 1;
+  padding: 12px 0;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--grey-dim);
+  border-bottom: 2px solid transparent;
+  transition: color 0.3s, border-color 0.3s;
+  cursor: pointer;
+  background: none;
+  border-top: none;
+  border-left: none;
+  border-right: none;
+}
+.content__tab.active {
+  color: var(--green);
+  border-bottom-color: var(--green);
+}
+.content__tab:not(.active):hover {
+  color: var(--grey);
+}
+
+/* Tab panels */
+.content__panel {
+  display: none;
+  animation: fadeInPanel 0.35s ease;
+}
+.content__panel.active {
+  display: block;
+}
+
+@keyframes fadeInPanel {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* === Insight cards === */
+
+/* Perek Overview card */
+.perek-card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.perek-card__header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.perek-card__icon {
+  width: 40px;
+  height: 40px;
+  background: var(--elevated);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.perek-card__icon svg {
+  width: 20px;
+  height: 20px;
+  stroke: var(--grey);
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.perek-card__label {
+  font-family: var(--font-ui);
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--grey-dim);
+  margin-bottom: 2px;
+}
+.perek-card__title {
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--white);
+}
+.perek-card__summary {
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.7;
+  color: rgba(255,255,255,0.7);
+}
+
+/* Key Concept card */
+.concept-card {
+  background: linear-gradient(135deg, var(--elevated) 0%, rgba(40,40,40,0.6) 100%);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.concept-card__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  font-family: var(--font-ui);
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #B39DDB;
+}
+.concept-card__badge-icon {
+  width: 18px;
+  height: 18px;
+  background: rgba(179,157,219,0.15);
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.concept-card__badge-icon svg {
+  width: 11px;
+  height: 11px;
+  stroke: #B39DDB;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.concept-card__title {
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--white);
+  margin-bottom: 8px;
+}
+.concept-card__text {
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.7;
+  color: rgba(255,255,255,0.75);
+}
+
+/* Historical Note card */
+.historical-card {
+  background: rgba(55,138,221,0.08);
+  border: 1px solid rgba(55,138,221,0.2);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.historical-card__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  font-family: var(--font-ui);
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #64B5F6;
+}
+.historical-card__badge-icon {
+  width: 18px;
+  height: 18px;
+  background: rgba(55,138,221,0.2);
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.historical-card__badge-icon svg {
+  width: 11px;
+  height: 11px;
+  stroke: #64B5F6;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.historical-card__title {
+  font-family: var(--font-ui);
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--white);
+  margin-bottom: 8px;
+}
+.historical-card__text {
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.7;
+  color: rgba(255,255,255,0.75);
+}
+
+/* Sichos card */
+.sichos-card {
+  background: linear-gradient(135deg, var(--surface) 0%, var(--elevated) 100%);
+  border-radius: var(--radius-lg);
+  padding: 22px 20px;
+  margin-bottom: 14px;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.sichos-card:active {
+  transform: scale(0.98);
+}
+
+.sichos-card__glow {
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle, rgba(29,185,84,0.12) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.sichos-card__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.sichos-card__dot {
+  width: 8px;
+  height: 8px;
+  background: var(--green);
+  border-radius: 50%;
+  animation: sparkp 2s ease-in-out infinite;
+}
+
+.sichos-card__badge-text {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--green);
+}
+
+.sichos-card__excerpt {
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.75;
+  color: rgba(255,255,255,0.8);
+  margin-bottom: 14px;
+}
+
+.sichos-card__source-he {
+  font-family: var(--font-hebrew);
+  font-size: 12px;
+  color: rgba(255,255,255,0.4);
+  direction: rtl;
+  margin-bottom: 4px;
+}
+
+.sichos-card__source-en {
+  font-size: 11px;
+  color: var(--grey-dim);
+  margin-bottom: 14px;
+}
+
+.sichos-card__play {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--green);
+  padding: 8px 16px;
+  border-radius: 20px;
+  background: var(--green-dim);
+  transition: background 0.3s ease;
+}
+.sichos-card__play:hover {
+  background: rgba(29,185,84,0.25);
+}
+.sichos-card__play svg {
+  width: 14px;
+  height: 14px;
+  fill: var(--green);
+}
+
+/* Did You Know card */
+.dyk-card {
+  background: var(--green-dim);
+  border: 1px solid var(--green-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.dyk-card__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.dyk-card__icon {
+  width: 32px;
+  height: 32px;
+  background: rgba(29,185,84,0.25);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.dyk-card__icon svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: var(--green);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.dyk-card__title {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--green);
+}
+
+.dyk-card__text {
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.7;
+  color: rgba(255,255,255,0.8);
+}
+
+/* === Full Text tab === */
+.halacha-section {
+  margin-bottom: 24px;
+}
+
+.halacha-section__label {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--grey-dim);
+  margin-bottom: 10px;
+}
+
+.halacha-card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.halacha-card__number {
+  font-family: var(--font-ui);
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--green);
+  margin-bottom: 14px;
+}
+
+.halacha-card__bilingual {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.halacha-card__en {
+  font-family: var(--font-body);
+  font-size: 13px;
+  line-height: 1.7;
+  color: rgba(255,255,255,0.85);
+}
+
+.halacha-card__he {
+  font-family: var(--font-hebrew);
+  font-size: 14px;
+  line-height: 1.9;
+  color: rgba(255,255,255,0.6);
+  direction: rtl;
+  text-align: right;
+  border-left: 1px solid var(--divider);
+  padding-left: 16px;
+}
+
+/* Share CTA */
+.share-cta {
+  text-align: center;
+  padding: 32px 20px 40px;
+}
+
+.share-cta__text {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--grey);
+  margin-bottom: 16px;
+}
+
+.share-cta__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--white);
+  background: var(--green);
+  padding: 14px 28px;
+  border-radius: 30px;
+  transition: transform 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 16px rgba(29,185,84,0.25);
+}
+.share-cta__btn:hover {
+  background: #1ed760;
+}
+.share-cta__btn:active {
+  transform: scale(0.97);
+}
+
+/* ========================================
+   6. VOICE CONVERSATION OVERLAY
+   ======================================== */
+.voice-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  background: var(--glass-heavy);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease;
+}
+.voice-overlay.visible {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.voice-overlay__close {
+  position: absolute;
+  top: max(16px, env(safe-area-inset-top, 16px));
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.08);
+  transition: background 0.3s ease;
+}
+.voice-overlay__close:hover {
+  background: rgba(255,255,255,0.15);
+}
+.voice-overlay__close svg {
+  width: 20px;
+  height: 20px;
+  stroke: var(--white);
+  stroke-width: 2;
+  fill: none;
+  stroke-linecap: round;
+}
+
+.voice-overlay__ring-wrapper {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin-bottom: 32px;
+}
+
+.voice-overlay__ring-pulse {
+  position: absolute;
+  inset: -10px;
+  border: 2px solid var(--green);
+  border-radius: 50%;
+  animation: rpulse 2.5s ease-out infinite;
+}
+
+.voice-overlay__ring {
+  width: 120px;
+  height: 120px;
+  border: 2.5px solid var(--green);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background: rgba(29,185,84,0.08);
+}
+
+.voice-overlay__ring svg {
+  width: 36px;
+  height: 36px;
+  fill: var(--green);
+}
+
+.voice-overlay__heading {
+  font-family: var(--font-ui);
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--white);
+  margin-bottom: 8px;
+}
+
+.voice-overlay__sub {
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--grey);
+  margin-bottom: 6px;
+}
+
+.voice-overlay__sub-he {
+  font-family: var(--font-hebrew);
+  font-size: 13px;
+  color: rgba(255,255,255,0.3);
+  direction: rtl;
+  margin-bottom: 36px;
+}
+
+/* Waveform */
+.voice-overlay__waveform {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 40px;
+  margin-bottom: 40px;
+}
+
+.voice-overlay__bar {
+  width: 4px;
+  height: 20px;
+  background: var(--green);
+  border-radius: 2px;
+  animation: vb 1s ease-in-out infinite;
+}
+.voice-overlay__bar:nth-child(1) { animation-delay: 0s; height: 16px; }
+.voice-overlay__bar:nth-child(2) { animation-delay: 0.15s; height: 28px; }
+.voice-overlay__bar:nth-child(3) { animation-delay: 0.3s; height: 36px; }
+.voice-overlay__bar:nth-child(4) { animation-delay: 0.45s; height: 24px; }
+.voice-overlay__bar:nth-child(5) { animation-delay: 0.6s; height: 14px; }
+.voice-overlay__bar:nth-child(6) { animation-delay: 0.75s; height: 20px; }
+
+.voice-overlay__return {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--white);
+  padding: 14px 32px;
+  border: 1.5px solid rgba(255,255,255,0.2);
+  border-radius: 30px;
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+.voice-overlay__return:hover {
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.35);
+}
+
+/* ========================================
+   7. BOTTOM NAV BAR
+   ======================================== */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  background: var(--glass);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid var(--divider);
+  padding-bottom: var(--safe-bottom);
+}
+
+.bottom-nav__inner {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  height: var(--nav-height);
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.bottom-nav__tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  transition: background 0.3s ease, color 0.3s ease;
+  color: var(--grey-dim);
+}
+.bottom-nav__tab:hover {
+  background: rgba(255,255,255,0.04);
+  color: var(--grey);
+}
+.bottom-nav__tab svg {
+  width: 24px;
+  height: 24px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.bottom-nav__label {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* ========================================
+   KEYFRAME ANIMATIONS
+   ======================================== */
+@keyframes wave {
+  0%   { transform: rotate(0deg); }
+  10%  { transform: rotate(14deg); }
+  20%  { transform: rotate(-8deg); }
+  30%  { transform: rotate(14deg); }
+  40%  { transform: rotate(-4deg); }
+  50%  { transform: rotate(10deg); }
+  60%  { transform: rotate(0deg); }
+  100% { transform: rotate(0deg); }
+}
+
+@keyframes sparkp {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(29,185,84,0.5); }
+  50%      { box-shadow: 0 0 5px 3px rgba(29,185,84,0.2); }
+}
+
+@keyframes rpulse {
+  0%   { transform: scale(1); opacity: 0.6; }
+  100% { transform: scale(1.15); opacity: 0; }
+}
+
+@keyframes vb {
+  0%, 100% { transform: scaleY(1); }
+  50%      { transform: scaleY(0.4); }
+}
+
+/* ========================================
+   RESPONSIVE — Larger screens
+   ======================================== */
+@media (min-width: 600px) {
+  body {
+    max-width: 430px;
+    margin: 0 auto;
+    border-left: 1px solid var(--divider);
+    border-right: 1px solid var(--divider);
+  }
+  .bottom-nav {
+    max-width: 430px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 0; }
+body { scrollbar-width: none; }
+</style>
+</head>
+<body>
+
+<!-- ========================================
+     1. TOP BAR
+     ======================================== -->
+<header class="top-bar">
+  <button class="top-bar__back tappable" aria-label="Back">
+    <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+  </button>
+  <div class="top-bar__center">
+    <div class="top-bar__label">NOW PLAYING</div>
+    <div class="top-bar__title">Hilchos Beis HaBechirah</div>
+  </div>
+  <button class="top-bar__share tappable" aria-label="Share">
+    <svg viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+  </button>
+</header>
+
+<!-- ========================================
+     2. HERO CONTENT STAGE
+     ======================================== -->
+<section class="hero">
+  <!-- FIX 2: 3 Artifact Slides — each a different type -->
+  <div class="hero__slides">
+
+    <!-- ARTIFACT 1: Conceptual Image (Mishkan full-bleed) -->
+    <div class="hero__slide active" data-artifact="0">
+      <img src="../assets/images/mishkan.png" alt="The Mishkan — Tabernacle">
+    </div>
+
+    <!-- ARTIFACT 2: Temple Structure Diagram -->
+    <div class="hero__slide hero__slide--diagram" data-artifact="1">
+      <div class="diagram-card">
+        <div class="diagram-card__header">
+          <div class="diagram-card__badge">
+            <span class="diagram-card__badge-dot"></span>
+            Schematic · Cross-Section
+          </div>
+          <div class="diagram-card__title">Structure of the Mikdash</div>
+        </div>
+        <div class="diagram-card__visual">
+          <svg viewBox="0 0 400 250" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">
+            <!-- Background grid lines for blueprint feel -->
+            <defs>
+              <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(29,185,84,0.06)" stroke-width="0.5"/>
+              </pattern>
+            </defs>
+            <rect width="400" height="250" fill="url(#grid)"/>
+
+            <!-- Courtyard (Azarah) — outer rectangle -->
+            <rect x="20" y="40" width="360" height="180" rx="4" ry="4"
+                  fill="rgba(179,157,219,0.06)" stroke="rgba(179,157,219,0.4)" stroke-width="1.5" stroke-dasharray="6 3"/>
+            <text x="30" y="60" font-family="'Plus Jakarta Sans',sans-serif" font-size="9" font-weight="700"
+                  fill="#B39DDB" letter-spacing="1" text-transform="uppercase">COURTYARD (AZARAH)</text>
+
+            <!-- Temple (Heichal) — inner rectangle -->
+            <rect x="70" y="80" width="260" height="110" rx="3" ry="3"
+                  fill="rgba(29,185,84,0.04)" stroke="rgba(29,185,84,0.35)" stroke-width="1.5"/>
+            <text x="148" y="100" font-family="'Plus Jakarta Sans',sans-serif" font-size="8" font-weight="700"
+                  fill="rgba(29,185,84,0.7)" letter-spacing="1.5" text-anchor="middle">TEMPLE (HEICHAL)</text>
+
+            <!-- Entrance Hall (Ulam) — left section -->
+            <rect x="74" y="108" width="60" height="74" rx="2" ry="2"
+                  fill="rgba(55,138,221,0.08)" stroke="rgba(55,138,221,0.4)" stroke-width="1"/>
+            <text x="104" y="137" font-family="'Plus Jakarta Sans',sans-serif" font-size="8" font-weight="700"
+                  fill="#378ADD" text-anchor="middle">ENTRANCE</text>
+            <text x="104" y="149" font-family="'Plus Jakarta Sans',sans-serif" font-size="8" font-weight="700"
+                  fill="#378ADD" text-anchor="middle">HALL</text>
+            <text x="104" y="163" font-family="'Plus Jakarta Sans',sans-serif" font-size="7" font-weight="500"
+                  fill="rgba(55,138,221,0.6)" text-anchor="middle">(Ulam)</text>
+
+            <!-- Sanctuary (Kodesh) — middle section -->
+            <rect x="140" y="108" width="100" height="74" rx="2" ry="2"
+                  fill="rgba(29,185,84,0.08)" stroke="rgba(29,185,84,0.45)" stroke-width="1"/>
+            <text x="190" y="140" font-family="'Plus Jakarta Sans',sans-serif" font-size="9" font-weight="700"
+                  fill="#1DB954" text-anchor="middle">SANCTUARY</text>
+            <text x="190" y="155" font-family="'Plus Jakarta Sans',sans-serif" font-size="7" font-weight="500"
+                  fill="rgba(29,185,84,0.6)" text-anchor="middle">(Kodesh)</text>
+            <!-- Menorah icon hint -->
+            <circle cx="168" cy="168" r="3" fill="rgba(29,185,84,0.3)"/>
+            <!-- Table icon hint -->
+            <circle cx="212" cy="168" r="3" fill="rgba(29,185,84,0.3)"/>
+            <!-- Incense altar hint -->
+            <circle cx="190" cy="168" r="3" fill="rgba(29,185,84,0.3)"/>
+
+            <!-- Holy of Holies (Kodesh HaKodashim) — right section -->
+            <rect x="246" y="108" width="78" height="74" rx="2" ry="2"
+                  fill="rgba(216,90,48,0.1)" stroke="rgba(216,90,48,0.5)" stroke-width="1.5"/>
+            <text x="285" y="134" font-family="'Plus Jakarta Sans',sans-serif" font-size="8" font-weight="800"
+                  fill="#D85A30" text-anchor="middle">HOLY OF</text>
+            <text x="285" y="146" font-family="'Plus Jakarta Sans',sans-serif" font-size="8" font-weight="800"
+                  fill="#D85A30" text-anchor="middle">HOLIES</text>
+            <text x="285" y="160" font-family="'Plus Jakarta Sans',sans-serif" font-size="6" font-weight="500"
+                  fill="rgba(216,90,48,0.6)" text-anchor="middle">(Kodesh HaKodashim)</text>
+            <!-- Ark symbol -->
+            <rect x="275" y="166" width="20" height="12" rx="2" ry="2"
+                  fill="none" stroke="rgba(216,90,48,0.4)" stroke-width="1"/>
+            <line x1="279" y1="166" x2="279" y2="162" stroke="rgba(216,90,48,0.3)" stroke-width="1"/>
+            <line x1="291" y1="166" x2="291" y2="162" stroke="rgba(216,90,48,0.3)" stroke-width="1"/>
+
+            <!-- Directional arrow: entrance -->
+            <line x1="40" y1="145" x2="70" y2="145" stroke="rgba(255,255,255,0.2)" stroke-width="1" marker-end="url(#arrowhead)"/>
+            <defs>
+              <marker id="arrowhead" markerWidth="6" markerHeight="4" refX="6" refY="2" orient="auto">
+                <polygon points="0 0, 6 2, 0 4" fill="rgba(255,255,255,0.25)"/>
+              </marker>
+            </defs>
+            <text x="34" y="138" font-family="'Plus Jakarta Sans',sans-serif" font-size="7" font-weight="600"
+                  fill="rgba(255,255,255,0.25)" transform="rotate(-90 34 138)">ENTER</text>
+
+            <!-- Legend at bottom -->
+            <circle cx="90" cy="236" r="4" fill="rgba(55,138,221,0.3)" stroke="rgba(55,138,221,0.5)" stroke-width="0.8"/>
+            <text x="98" y="239" font-family="'Plus Jakarta Sans',sans-serif" font-size="7" fill="rgba(255,255,255,0.4)">Ulam</text>
+            <circle cx="140" cy="236" r="4" fill="rgba(29,185,84,0.3)" stroke="rgba(29,185,84,0.5)" stroke-width="0.8"/>
+            <text x="148" y="239" font-family="'Plus Jakarta Sans',sans-serif" font-size="7" fill="rgba(255,255,255,0.4)">Kodesh</text>
+            <circle cx="200" cy="236" r="4" fill="rgba(216,90,48,0.3)" stroke="rgba(216,90,48,0.5)" stroke-width="0.8"/>
+            <text x="208" y="239" font-family="'Plus Jakarta Sans',sans-serif" font-size="7" fill="rgba(255,255,255,0.4)">Kodesh HaKodashim</text>
+            <circle cx="310" cy="236" r="4" fill="rgba(179,157,219,0.15)" stroke="rgba(179,157,219,0.4)" stroke-width="0.8"/>
+            <text x="318" y="239" font-family="'Plus Jakarta Sans',sans-serif" font-size="7" fill="rgba(255,255,255,0.4)">Azarah</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- ARTIFACT 3: Interactive Timeline — has internal era switching -->
+    <div class="hero__slide hero__slide--timeline" data-artifact="2">
+      <div class="timeline-inner-image">
+        <img class="active" src="../assets/images/mishkan.png" alt="The Mishkan" data-era-img="mishkan">
+        <img src="../assets/images/first-temple.png" alt="The First Temple" data-era-img="first">
+        <img src="../assets/images/second-temple.png" alt="The Second Temple" data-era-img="second">
+      </div>
+
+      <!-- Era pills and caption — internal to this artifact -->
+      <div class="timeline-controls">
+        <div class="timeline">
+          <button class="timeline__pill active tappable" data-era="mishkan">
+            MISHKAN
+            <span>~480 yrs</span>
+          </button>
+          <button class="timeline__pill tappable" data-era="first">
+            1ST TEMPLE
+            <span>~410 yrs</span>
+          </button>
+          <button class="timeline__pill tappable" data-era="second">
+            2ND TEMPLE
+            <span>~420 yrs</span>
+          </button>
+        </div>
+        <div class="timeline-caption" id="timelineCaption">~480 years &middot; Portable structure in the wilderness</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PiP with real image -->
+  <div class="hero__pip tappable">
+    <img class="pip-bg-img" src="https://w2.chabad.org/media/images/1192/YbQv11920246.jpg?_i=_n0CD6D2AB48861DE47FBD390F36F56573" alt="Live video">
+    <div class="pip-rec"></div>
+    <div class="pip-play-icon">
+      <svg viewBox="0 0 24 24"><polygon points="8,5 20,12 8,19"/></svg>
+    </div>
+    <div class="pip-label">LIVE</div>
+  </div>
+
+  <!-- Text toggle -->
+  <button class="hero__text-toggle tappable" id="textToggle" aria-label="Toggle karaoke text">
+    <svg viewBox="0 0 24 24"><path d="M3 5h18M3 10h14M3 15h18M3 20h10"/></svg>
+  </button>
+
+  <!-- Indicator dots — represent 3 artifacts -->
+  <div class="hero__dots">
+    <div class="hero__dot active" data-artifact="0"></div>
+    <div class="hero__dot" data-artifact="1"></div>
+    <div class="hero__dot" data-artifact="2"></div>
+  </div>
+
+  <!-- FIX 3: Karaoke/Subtitle overlay — bilingual, condensed, above dots -->
+  <div class="hero__karaoke" id="karaoke">
+    <div class="subtitle-row past" id="subtitle-past">
+      <div class="subtitle-en">as it states: "And they shall make Me a sanctuary"</div>
+      <div class="subtitle-he">שֶׁנֶּאֱמַר וְעָשׂוּ לִי מִקְדָּשׁ</div>
+    </div>
+    <div class="subtitle-row cur" id="subtitle-cur">
+      <div class="subtitle-en">It is a positive commandment to construct a House for God</div>
+      <div class="subtitle-he">מִצְוַת עֲשֵׂה לַעֲשׂוֹת בַּיִת לַה׳</div>
+    </div>
+    <div class="subtitle-row next" id="subtitle-next">
+      <div class="subtitle-en">prepared for sacrifices to be offered within</div>
+      <div class="subtitle-he">מוּכָן לִהְיוֹת מַקְרִיבִין בּוֹ הַקָּרְבָּנוֹת</div>
+    </div>
+  </div>
+
+  <!-- Gradient fade -->
+  <div class="hero__gradient"></div>
+</section>
+
+<!-- ========================================
+     4. PLAYER CONTROLS
+     ======================================== -->
+<section class="player">
+  <!-- Progress scrubber -->
+  <div class="player__scrubber tappable">
+    <div class="player__track">
+      <div class="player__fill">
+        <div class="player__thumb"></div>
+      </div>
+    </div>
+  </div>
+  <div class="player__times">
+    <span>4:20</span>
+    <span>12:45</span>
+  </div>
+
+  <!-- Transport — centered, raise hand on the right -->
+  <div class="player__transport">
+    <div class="player__transport-center">
+      <button class="player__speed-pill tappable">1x</button>
+      <button class="player__play tappable" aria-label="Play">
+        <svg viewBox="0 0 24 24"><polygon points="6,3 20,12 6,21"/></svg>
+      </button>
+      <button class="player__speed-pill tappable">15s</button>
+    </div>
+    <button class="player__raise-hand tappable" id="raiseHandBtn" aria-label="Raise hand to ask a question">
+      <span class="wave-emoji">&#x270B;</span>
+    </button>
+  </div>
+
+  <!-- Action row -->
+  <div class="player__actions">
+    <button class="player__action tappable">
+      <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+      <span>Save</span>
+    </button>
+    <button class="player__action tappable">
+      <svg viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+      <span>Share</span>
+    </button>
+  </div>
+</section>
+
+<!-- ========================================
+     5. BELOW-FOLD CONTENT — FIX 6
+     ======================================== -->
+<section class="content">
+  <div class="content__divider"></div>
+
+  <!-- Currently Playing indicator -->
+  <div class="content__now-playing">
+    <div class="now-dot"></div>
+    Currently Playing: Halacha 1
+  </div>
+
+  <!-- Tabs -->
+  <div class="content__tabs">
+    <button class="content__tab active" data-tab="insights">Insights</button>
+    <button class="content__tab" data-tab="fulltext">Full Text</button>
+  </div>
+
+  <!-- ========== INSIGHTS TAB ========== -->
+  <div class="content__panel active" id="panel-insights">
+
+    <!-- 1. Perek Overview card -->
+    <div class="perek-card">
+      <div class="perek-card__header">
+        <div class="perek-card__icon">
+          <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        </div>
+        <div>
+          <div class="perek-card__label">Perek Overview</div>
+          <div class="perek-card__title">Hilchos Beis HaBechirah, Perek 1</div>
+        </div>
+      </div>
+      <div class="perek-card__summary">The laws of the Holy Temple: its construction, essential components, and eternal sanctity on Mount Moriah in Jerusalem.</div>
+    </div>
+
+    <!-- 2. The Rebbe's Insight (sichos card) -->
+    <div class="sichos-card tappable" id="sichosCard">
+      <div class="sichos-card__glow"></div>
+      <div class="sichos-card__badge">
+        <div class="sichos-card__dot"></div>
+        <div class="sichos-card__badge-text">THE REBBE'S INSIGHT</div>
+      </div>
+      <div class="sichos-card__excerpt">The Mishkan was portable &mdash; its sanctity came from its components, not the ground it stood on. The Beis HaMikdash is the opposite: the place itself is holy, even without the building. That's why the Temple required ascending steps between each level of holiness &mdash; the spiritual gradations had to be expressed in the physical space.</div>
+      <div class="sichos-card__source-he">לקוטי שיחות חכ״ט ע׳ 71</div>
+      <div class="sichos-card__source-en">Likkutei Sichos Vol. 29 p. 71 &middot; Parshas Re'eh</div>
+      <button class="sichos-card__play tappable">
+        <svg viewBox="0 0 24 24"><polygon points="6,3 20,12 6,21"/></svg>
+        Listen
+      </button>
+    </div>
+
+    <!-- 3. Did You Know card -->
+    <div class="dyk-card">
+      <div class="dyk-card__header">
+        <div class="dyk-card__icon">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+        </div>
+        <div class="dyk-card__title">Did You Know?</div>
+      </div>
+      <div class="dyk-card__text">No iron tools were permitted for the Altar's stones &mdash; iron shortens life (war), while the Altar prolongs life (atonement).</div>
+    </div>
+
+    <!-- 4. Key Concept card -->
+    <div class="concept-card">
+      <div class="concept-card__badge">
+        <div class="concept-card__badge-icon">
+          <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        </div>
+        KEY CONCEPT
+      </div>
+      <div class="concept-card__title">Seven Sacred Vessels</div>
+      <div class="concept-card__text">The Sanctuary requires seven utensils: the main altar, the ramp, the wash basin, the incense altar, the Menorah, and the showbread table.</div>
+    </div>
+
+    <!-- 5. Historical Note card -->
+    <div class="historical-card">
+      <div class="historical-card__badge">
+        <div class="historical-card__badge-icon">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        HISTORICAL NOTE
+      </div>
+      <div class="historical-card__title">369 Years in Shiloh</div>
+      <div class="historical-card__text">The sanctuary of Shiloh was the longest-standing dwelling place before the permanent Temple in Jerusalem.</div>
+    </div>
+
+  </div>
+
+  <!-- ========== FULL TEXT TAB ========== -->
+  <div class="content__panel" id="panel-fulltext">
+
+    <!-- Halacha 1 -->
+    <div class="halacha-section">
+      <div class="halacha-section__label">Halacha 1</div>
+      <div class="halacha-card">
+        <div class="halacha-card__number">1</div>
+        <div class="halacha-card__bilingual">
+          <div class="halacha-card__en">It is a positive commandment to construct a House for God, prepared for sacrifices to be offered within. We must celebrate there three times a year, as Exodus 25:8 states: "And you shall make Me a sanctuary." The sanctuary constructed by Moses is already described in the Torah. It was only temporary, as Deuteronomy 12:9 states: "For at present, you have not come unto the resting place and the inheritance."</div>
+          <div class="halacha-card__he">מִצְוַת עֲשֵׂה לַעֲשׂוֹת בַּיִת לַה', מוּכָן לִהְיוֹת מַקְרִיבִים בּוֹ הַקָּרְבָּנוֹת, וְחוֹגְגִין אֵלָיו שָׁלוֹשׁ פְּעָמִים בַּשָּׁנָה, שֶׁנֶּאֱמַר "וְעָשׂוּ לִי מִקְדָּשׁ". וּכְבָר נִתְפָּרֵשׁ בַּתּוֹרָה מִשְׁכָּן שֶׁעָשָׂה מֹשֶׁה רַבֵּנוּ, וְהָיָה לְפִי שָׁעָה, שֶׁנֶּאֱמַר "כִּי לֹא בָאתֶם עַד עָתָּה..."</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Halacha 2 -->
+    <div class="halacha-section">
+      <div class="halacha-section__label">Halacha 2</div>
+      <div class="halacha-card">
+        <div class="halacha-card__number">2</div>
+        <div class="halacha-card__bilingual">
+          <div class="halacha-card__en">After the Jews entered the Land of Israel, they erected the Sanctuary in Gilgal during the fourteen years in which they conquered and divided the land. From there, they came to Shiloh, built a house of stone, and spread the curtains of the Sanctuary over it. It did not have a roof. The sanctuary of Shiloh stood for 369 years. When Eli died, it was destroyed. Afterwards, they came to Nov and built a sanctuary. When Samuel died, it was destroyed. And they came to Givon and built a sanctuary. From Givon, they came to the eternal structure in Jerusalem. The days the sanctuary stood in Nov and Givon were 57 years.</div>
+          <div class="halacha-card__he">כֵּיוָן שֶׁנִּכְנְסוּ לָאָרֶץ, הֶעֱמִידוּ הַמִּשְׁכָּן בַּגִלְגָּל אַרְבַּע עֶשְׂרֵה שָׁנָה שֶׁכָּבְשׁוּ וְשֶׁחָלְקוּ. וּמִשָּׁם בָּאוּ לְשִׁילֹה, וּבָנוּ שָׁם בַּיִת שֶׁל אֲבָנִים, וּפָרְסוּ יְרִיעוֹת הַמִּשְׁכָּן עָלָיו; וְלֹא הָיְתָה שָׁם תִּקְרָה. וּשְׁלוֹשׁ מֵאוֹת וְתֵשַׁע וְשִׁשִּׁים שָׁנָה עָמַד מִּשְׁכַּן שִׁילֹה, וּכְשֶׁמֵּת עֵלִי חָרַב. וּבָאוּ לְנוֹב וּבָנוּ שָׁם מִקְדָּשׁ, וּכְשֶׁמֵּת שְׁמוּאֵל חָרַב. וּבָאוּ לְגִבְעוֹן וּבָנוּ שָׁם מִקְדָּשׁ. וּמִגִּבְעוֹן בָּאוּ לְבֵית הָעוֹלָמִים. וִימֵי נוֹב וְגִבְעוֹן שֶׁבַע וַחֲמִשִּׁים שָׁנָה.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Halacha 3 -->
+    <div class="halacha-section">
+      <div class="halacha-section__label">Halacha 3</div>
+      <div class="halacha-card">
+        <div class="halacha-card__number">3</div>
+        <div class="halacha-card__bilingual">
+          <div class="halacha-card__en">Once the Temple was built in Jerusalem, it became forbidden to build a sanctuary for God or to offer sacrifices in any other place. There is no Sanctuary for all generations except in Jerusalem and specifically, on Mt. Moriah, as I Chronicles 22:1 states: "And David declared: 'This is the House of the Lord, God, and this is the altar for the burnt offerings of Israel.'" and Psalms 132:14 states: "This is My resting place forever."</div>
+          <div class="halacha-card__he">כֵּיוָן שֶׁנִּבְנָה הַמִּקְדָּשׁ בִּירוּשָׁלַיִם נֶאְסְרוּ כָּל הַמְּקוֹמוֹת כֻּלָּן לִבְנוֹת בָּהֶן בַּיִת לַה׳ וּלְהַקְרִיב בָּהֶן קָרְבָּן. וְאֵין שָׁם בַּיִת לְדוֹרֵי הַדּוֹרוֹת אֶלָא בִּירוּשָׁלַיִם בִּלְבַד, וּבְהַר הַמּוֹרִיָּה שֶׁבָּהּ, שֶׁנֶּאֱמַר "וַיֹּאמֶר דָּוִיד זֶה הוּא בֵּית ה׳ הָאֱלֹהִים וְזֶה מִּזְבֵּחַ לְעֹלָה לְיִשְׂרָאֵל", וְאוֹמֵר "זֹאת מְנוּחָתִי עֲדֵי עַד".</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Halacha 4 -->
+    <div class="halacha-section">
+      <div class="halacha-section__label">Halacha 4</div>
+      <div class="halacha-card">
+        <div class="halacha-card__number">4</div>
+        <div class="halacha-card__bilingual">
+          <div class="halacha-card__en">The design of the structure built by King Solomon is described explicitly in the Book of Kings. In contrast, the design of the Messianic Temple, though mentioned in the Book of Ezekiel, is not explicit or explained. Thus, the people in the time of Ezra built the Second Temple according to the structure of Solomon, including certain aspects which are explicitly stated in Ezekiel.</div>
+          <div class="halacha-card__he">בִּנְיָן שֶׁבָּנָה שְׁלֹמֹה כְּבָר מְפֹרָשׁ בִּמְלָכִים. וְכֵן בִּנְיַן הֶעָתִיד לְהִבָּנוֹת, אַף עַל פִּי שֶׁהוּא כָּתוּב בִּיחֶזְקֵאל, אֵינוֹ מְפֹרָשׁ וּמְבֹאָר. וְאַנְשֵׁי בַּיִת שֵׁנִי - כְּשֶׁבָּנוּ בִּימֵי עֶזְרָא - בָּנוּהוּ כְּבִנְיַן שְׁלֹמֹה, וּמֵעֵין דְּבָרִים הַמְּפֹרָשִׁים בִּיחֶזְקֵאל.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Halacha 5 -->
+    <div class="halacha-section">
+      <div class="halacha-section__label">Halacha 5</div>
+      <div class="halacha-card">
+        <div class="halacha-card__number">5</div>
+        <div class="halacha-card__bilingual">
+          <div class="halacha-card__en">The following elements are essential when constructing this House: a) the Sanctuary, b) the Holy of Holies, c) preceding the Sanctuary, there should be a place called the Entrance Hall. The three together are called the Temple. In addition, we must make another partition around the Temple, set off from it slightly, resembling the curtains surrounding the courtyard of the sanctuary in the desert. Everything encompassed by this partition is similar to the courtyard of the Tent of Meeting and is called the Courtyard. The entire area is referred to as the Mikdash.</div>
+          <div class="halacha-card__he">וְאֵלּוּ הֵן הַדְּבָרִים שֶׁהֵן עִיקָר בְּבִנְיַן הַבַּיִת: עוֹשִׂין בּוֹ קֹדֶשׁ, וְקֹדֶשׁ הַקֳּדָשִׁים, וְיִהְיֶה לִפְנֵי הַקֹּדֶשׁ מָקוֹם אֶחָד וְהוּא הַנִּקְרָא 'אוּלָם'; וּשְׁלָשְׁתָּן נִקְרָאִין 'הֵיכָל'. וְעוֹשִׂין מְחִצָּה אַחֶרֶת סָבִיב לַהֵיכָל, רְחוֹקָה מִמֶּנּוּ, כְּעֵין קַלְעֵי הֶחָצֵר שֶׁהָיוּ בַּמִּדְבָּר. וְכָל הַמֻּקָּף בִּמְחִצָּה זוֹ שֶׁהוּא כְּעֵין חֲצַר אֹהֶל מוֹעֵד, הוּא הַנִּקְרָא 'עֲזָרָה'. וְהַכֹּל נִקְרָא 'מִקְדָּשׁ'.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Halacha 6 -->
+    <div class="halacha-section">
+      <div class="halacha-section__label">Halacha 6</div>
+      <div class="halacha-card">
+        <div class="halacha-card__number">6</div>
+        <div class="halacha-card__bilingual">
+          <div class="halacha-card__en">The following seven utensils are required for the Sanctuary: a) an altar for the burnt offering and other sacrifices; b) a ramp to ascend to the altar, positioned before the Entrance Hall to the south; c) a wash basin with a pedestal where the priests would sanctify their hands and feet for the service, positioned between the Entrance Hall and the altar; d) the altar for the incense offering, e) the Menorah, and f) the table for the showbread. The latter three were placed within the Sanctuary, before the Holy of Holies.</div>
+          <div class="halacha-card__he">וְעוֹשִׂין בַּמִּקְדָּשׁ שִׁבְעָה כֵּלִים: מִזְבֵּחַ לְעוֹלָה וְלִשְׁאָר הַקָּרְבָּנוֹת; וְכֶבֶשׁ שֶׁעוֹלִים בּוֹ לַמִּזְבֵּחַ, וּמְקוֹמוֹ לִפְנֵי הָאוּלָם מָשׁוּךְ לַדָּרוֹם; וְכִיּוֹר וְכַנּוֹ, לְקַדֵּשׁ מִמֶּנּוּ הַכּוֹהֲנִים יְדֵיהֶם וְרַגְלֵיהֶם לָעֲבוֹדָה, וּמְקוֹמוֹ בֵּין הָאוּלָם וְלַמִּזְבֵּחַ מָשׁוּךְ לַדָּרוֹם, שֶׁהוּא שְׂמֹאל הַנִּכְנָס לַמִּקְדָּשׁ. וּמִזְבֵּחַ לַקְּטֹרֶת; וּמְנוֹרָה; וְשֻׁלְחָן; וּשְׁלָשְׁתָּן בְּתוֹךְ הַקֹּדֶשׁ, לִפְנֵי קֹדֶשׁ הַקֳּדָשִׁים.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Share CTA (below both tabs) -->
+  <div class="share-cta">
+    <div class="share-cta__text">Share today's learning with your community</div>
+    <button class="share-cta__btn tappable">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+      Share Branded Card
+    </button>
+  </div>
+</section>
+
+<!-- ========================================
+     6. VOICE CONVERSATION OVERLAY
+     ======================================== -->
+<div class="voice-overlay" id="voiceOverlay">
+  <button class="voice-overlay__close tappable" id="voiceClose" aria-label="Close">
+    <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+  </button>
+
+  <div class="voice-overlay__ring-wrapper">
+    <div class="voice-overlay__ring-pulse"></div>
+    <div class="voice-overlay__ring">
+      <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="19" x2="12" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="8" y1="23" x2="16" y2="23" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+    </div>
+  </div>
+
+  <div class="voice-overlay__heading">I'm Listening</div>
+  <div class="voice-overlay__sub">Ask about Hilchos Beis HaBechirah</div>
+  <div class="voice-overlay__sub-he">שאל על הלכות בית הבחירה</div>
+
+  <div class="voice-overlay__waveform">
+    <div class="voice-overlay__bar"></div>
+    <div class="voice-overlay__bar"></div>
+    <div class="voice-overlay__bar"></div>
+    <div class="voice-overlay__bar"></div>
+    <div class="voice-overlay__bar"></div>
+    <div class="voice-overlay__bar"></div>
+  </div>
+
+  <button class="voice-overlay__return tappable" id="voiceReturn">RETURN TO SHIUR</button>
+</div>
+
+<!-- ========================================
+     7. BOTTOM NAV BAR
+     ======================================== -->
+<nav class="bottom-nav">
+  <div class="bottom-nav__inner">
+    <button class="bottom-nav__tab tappable" aria-label="Home">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span class="bottom-nav__label">Home</span>
+    </button>
+    <button class="bottom-nav__tab tappable" aria-label="Search">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <span class="bottom-nav__label">Search</span>
+    </button>
+    <button class="bottom-nav__tab tappable" aria-label="Saved">
+      <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+      <span class="bottom-nav__label">Saved</span>
+    </button>
+    <button class="bottom-nav__tab tappable" aria-label="Profile">
+      <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span class="bottom-nav__label">Profile</span>
+    </button>
+  </div>
+</nav>
+
+<!-- ========================================
+     8. SCRIPT — ALL INTERACTIONS
+     ======================================== -->
+<script>
+(function() {
+  'use strict';
+
+  // === DOM References ===
+  const artifactSlides = document.querySelectorAll('.hero__slide');
+  const dots = document.querySelectorAll('.hero__dot');
+  const timelinePills = document.querySelectorAll('.timeline__pill');
+  const timelineImages = document.querySelectorAll('.timeline-inner-image img');
+  const textToggle = document.getElementById('textToggle');
+  const karaoke = document.getElementById('karaoke');
+  const raiseHandBtn = document.getElementById('raiseHandBtn');
+  const voiceOverlay = document.getElementById('voiceOverlay');
+  const voiceClose = document.getElementById('voiceClose');
+  const voiceReturn = document.getElementById('voiceReturn');
+  const sichosCard = document.getElementById('sichosCard');
+  const tappables = document.querySelectorAll('.tappable');
+  const tabs = document.querySelectorAll('.content__tab');
+  const panels = document.querySelectorAll('.content__panel');
+
+  // === State ===
+  let currentArtifact = 0;
+  let autoArtifactTimer = null;
+  let karaokeVisible = true;
+
+  // === Karaoke Lines (bilingual) ===
+  const karaokeLines = [
+    { en: 'as it states: "And they shall make Me a sanctuary"', he: 'שֶׁנֶּאֱמַר וְעָשׂוּ לִי מִקְדָּשׁ' },
+    { en: 'It is a positive commandment to construct a House for God', he: 'מִצְוַת עֲשֵׂה לַעֲשׂוֹת בַּיִת לַה׳' },
+    { en: 'prepared for sacrifices to be offered within', he: 'מוּכָן לִהְיוֹת מַקְרִיבִין בּוֹ הַקָּרְבָּנוֹת' },
+    { en: 'We celebrate there three times a year', he: 'וְחוֹגְגִין אֵלָיו שָׁלוֹשׁ פְּעָמִים בַּשָּׁנָה' },
+    { en: 'The sanctuary by Moses is described in the Torah', he: 'וּכְבָר נִתְפָּרֵשׁ בַּתּוֹרָה מִשְׁכָּן' },
+    { en: 'which Moses our teacher constructed', he: 'שֶׁעָשָׂה מֹשֶׁה רַבֵּנוּ' },
+    { en: 'and it was only temporary', he: 'וְהָיָה לְפִי שָׁעָה' },
+    { en: '"For at present, you have not come..."', he: 'כִּי לֹא בָאתֶם עַד עָתָּה' }
+  ];
+  let karaokeIndex = 1;
+
+  // === Artifact Cycling (FIX 2: dots cycle between 3 artifact types) ===
+  function goToArtifact(index) {
+    artifactSlides.forEach(s => s.classList.remove('active'));
+    dots.forEach(d => d.classList.remove('active'));
+
+    currentArtifact = index;
+    artifactSlides[index].classList.add('active');
+    dots[index].classList.add('active');
+
+    resetAutoArtifact();
+  }
+
+  function nextArtifact() {
+    goToArtifact((currentArtifact + 1) % artifactSlides.length);
+  }
+
+  function resetAutoArtifact() {
+    clearInterval(autoArtifactTimer);
+    autoArtifactTimer = setInterval(nextArtifact, 6000);
+  }
+
+  // Start auto-cycle
+  resetAutoArtifact();
+
+  // === Swipe Gestures for Hero ===
+  var heroEl = document.querySelector('.hero');
+  var touchStartX = 0;
+  heroEl.addEventListener('touchstart', function(e) {
+    touchStartX = e.changedTouches[0].screenX;
+  }, { passive: true });
+  heroEl.addEventListener('touchend', function(e) {
+    var diff = touchStartX - e.changedTouches[0].screenX;
+    if (Math.abs(diff) > 50) {
+      if (diff > 0) {
+        goToArtifact((currentArtifact + 1) % artifactSlides.length);
+      } else {
+        goToArtifact((currentArtifact - 1 + artifactSlides.length) % artifactSlides.length);
+      }
+    }
+  });
+
+  // === Dot Clicks — cycle artifacts ===
+  dots.forEach(dot => {
+    dot.addEventListener('click', function() {
+      goToArtifact(parseInt(this.dataset.artifact));
+    });
+  });
+
+  // === Timeline Pill Clicks — internal to artifact 3 ===
+  var timelineCaption = document.getElementById('timelineCaption');
+  var eraCaptions = {
+    mishkan: '~480 years \u00b7 Portable structure in the wilderness',
+    first: '410 years \u00b7 Built by King Solomon, contained the Ark',
+    second: '420 years \u00b7 Grand but missing five sacred elements'
+  };
+
+  timelinePills.forEach(pill => {
+    pill.addEventListener('click', function() {
+      // First, make sure we are viewing artifact 3 (the timeline)
+      goToArtifact(2);
+
+      // Switch era image within the timeline artifact
+      var era = this.dataset.era;
+      timelinePills.forEach(p => p.classList.remove('active'));
+      this.classList.add('active');
+
+      timelineImages.forEach(img => {
+        img.classList.remove('active');
+        if (img.dataset.eraImg === era) {
+          img.classList.add('active');
+        }
+      });
+
+      // Update caption text
+      if (timelineCaption && eraCaptions[era]) {
+        timelineCaption.textContent = eraCaptions[era];
+      }
+    });
+  });
+
+  // === Text Toggle ===
+  textToggle.addEventListener('click', function() {
+    karaokeVisible = !karaokeVisible;
+    if (karaokeVisible) {
+      karaoke.classList.remove('hidden');
+      textToggle.classList.remove('off');
+    } else {
+      karaoke.classList.add('hidden');
+      textToggle.classList.add('off');
+    }
+  });
+
+  // === Karaoke Auto-Cycle (bilingual) ===
+  const subtitlePast = document.getElementById('subtitle-past');
+  const subtitleCur = document.getElementById('subtitle-cur');
+  const subtitleNext = document.getElementById('subtitle-next');
+
+  function cycleKaraoke() {
+    karaokeIndex = (karaokeIndex + 1) % karaokeLines.length;
+    var pastIdx = (karaokeIndex - 1 + karaokeLines.length) % karaokeLines.length;
+    var nextIdx = (karaokeIndex + 1) % karaokeLines.length;
+
+    subtitlePast.querySelector('.subtitle-en').textContent = karaokeLines[pastIdx].en;
+    subtitlePast.querySelector('.subtitle-he').textContent = karaokeLines[pastIdx].he;
+    subtitleCur.querySelector('.subtitle-en').textContent = karaokeLines[karaokeIndex].en;
+    subtitleCur.querySelector('.subtitle-he').textContent = karaokeLines[karaokeIndex].he;
+    subtitleNext.querySelector('.subtitle-en').textContent = karaokeLines[nextIdx].en;
+    subtitleNext.querySelector('.subtitle-he').textContent = karaokeLines[nextIdx].he;
+  }
+
+  setInterval(cycleKaraoke, 2500);
+
+  // === Tab Switching (FIX 6) ===
+  tabs.forEach(tab => {
+    tab.addEventListener('click', function() {
+      var targetPanel = this.dataset.tab;
+
+      tabs.forEach(t => t.classList.remove('active'));
+      this.classList.add('active');
+
+      panels.forEach(p => {
+        p.classList.remove('active');
+        if (p.id === 'panel-' + targetPanel) {
+          p.classList.add('active');
+        }
+      });
+    });
+  });
+
+  // === Raise Hand → Voice Overlay ===
+  raiseHandBtn.addEventListener('click', function() {
+    voiceOverlay.classList.add('visible');
+    document.body.style.overflow = 'hidden';
+  });
+
+  function closeVoice() {
+    voiceOverlay.classList.remove('visible');
+    document.body.style.overflow = '';
+  }
+
+  voiceClose.addEventListener('click', closeVoice);
+  voiceReturn.addEventListener('click', closeVoice);
+
+  // Close on overlay background click
+  voiceOverlay.addEventListener('click', function(e) {
+    if (e.target === voiceOverlay) closeVoice();
+  });
+
+  // === Sichos Card → Open Link ===
+  sichosCard.addEventListener('click', function() {
+    window.open('https://www.chabad.org/torah-texts/7208442', '_blank');
+  });
+
+  // === Touch Feedback ===
+  tappables.forEach(function(el) {
+    el.addEventListener('touchstart', function() {
+      // Preserve existing translateY for absolutely positioned elements
+      if (this.classList.contains('player__raise-hand')) {
+        this.style.transform = 'translateY(-50%) scale(0.95)';
+      } else {
+        this.style.transform = 'scale(0.97)';
+      }
+    }, { passive: true });
+
+    el.addEventListener('touchend', function() {
+      if (this.classList.contains('player__raise-hand')) {
+        this.style.transform = 'translateY(-50%)';
+      } else {
+        this.style.transform = '';
+      }
+    }, { passive: true });
+
+    el.addEventListener('touchcancel', function() {
+      if (this.classList.contains('player__raise-hand')) {
+        this.style.transform = 'translateY(-50%)';
+      } else {
+        this.style.transform = '';
+      }
+    }, { passive: true });
+  });
+
+  // === Keyboard: Escape closes voice overlay ===
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && voiceOverlay.classList.contains('visible')) {
+      closeVoice();
+    }
+  });
+
+})();
+</script>
+
+</body>
+</html>
