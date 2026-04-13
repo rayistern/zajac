@@ -15,6 +15,8 @@ export interface FrontendDistributionProps {
   apiLoadBalancer: elbv2.IApplicationLoadBalancer;
   certificate?: acm.ICertificate;
   customDomainName?: string;
+  /** Additional CloudFront behaviors to add (e.g. content-assets) */
+  additionalBehaviors?: Record<string, cloudfront.BehaviorOptions>;
 }
 
 export class FrontendDistribution extends Construct {
@@ -42,6 +44,7 @@ export class FrontendDistribution extends Construct {
           originRequestPolicy:
             cloudfront.OriginRequestPolicy.ALL_VIEWER_EXCEPT_HOST_HEADER,
         },
+        ...props.additionalBehaviors,
       },
       errorResponses: [
         {

@@ -11,6 +11,7 @@ import * as rds from "aws-cdk-lib/aws-rds";
 // import * as route53 from "aws-cdk-lib/aws-route53";
 // import * as route53Targets from "aws-cdk-lib/aws-route53-targets";
 import * as s3 from "aws-cdk-lib/aws-s3";
+import { ContentStorage } from "./components/content-storage";
 import { FrontendDistribution } from "./components/frontend-distribution";
 import { RdsDatabase } from "./components/database";
 
@@ -185,6 +186,12 @@ export class InfraStack extends Stack {
         : `${normalizeDnsLabel(props.environmentName)}.${resolvedDomainName}`
       : undefined;
 
+    const contentStorage = new ContentStorage(
+      this,
+      `${projectConstructId}ContentStorage`,
+      { environmentName: props.environmentName },
+    );
+
     const frontendBucket = new s3.Bucket(this, "Bucket", {
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       enforceSSL: true,
@@ -203,6 +210,9 @@ export class InfraStack extends Stack {
         apiLoadBalancer: apiService.loadBalancer,
         customDomainName,
         certificate,
+        additionalBehaviors: {
+          "/content-assets/*": contentStorage.getCloudFrontBehavior(),
+        },
       },
     );
 
@@ -238,6 +248,10 @@ export class InfraStack extends Stack {
 
     new CfnOutput(this, `${projectConstructId}FrontendBucketName`, {
       value: frontendBucket.bucketName,
+    });
+
+    new CfnOutput(this, `${projectConstructId}ContentBucketName`, {
+      value: contentStorage.bucket.bucketName,
     });
 
     new CfnOutput(this, `${projectConstructId}ApiAlbUrl`, {

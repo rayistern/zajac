@@ -86,6 +86,7 @@ def run_pipeline(
     session.flush()
 
     all_stages = stages or [
+        "ingest",
         "transcription",
         "sefaria",
         "alignment",
@@ -95,6 +96,17 @@ def run_pipeline(
     ]
 
     try:
+        # Stage 0: RSS ingestion (discover new episodes)
+        if "ingest" in all_stages:
+            from .rss_ingester import RSSIngester
+            ingester = RSSIngester(session)
+            new_episodes = ingester.ingest_all_classes()
+            for ep in new_episodes:
+                ingester.download_audio(ep)
+            ingester.close()
+            run.stages_status["ingest"] = f"found {len(new_episodes)} new episodes"
+            session.flush()
+
         # Get episodes to process
         episodes = _get_episodes(session, class_ids, episode_ids)
         if not episodes:
@@ -267,28 +279,83 @@ def _process_episode(session, config, run, episode, stages):
         raise
 
 
+def show_status(config_path: str | None = None):
+    """Show pipeline status: recent runs, pending episodes, open votes."""
+    config = load_config(config_path)
+    if not config.database_url:
+        print("No DATABASE_URL configured.")
+        return
+
+    SessionFactory = get_session_factory(config.database_url)
+    session = SessionFactory()
+
+    # Recent pipeline runs
+    runs = session.query(PipelineRun).order_by(PipelineRun.started_at.desc()).limit(10).all()
+    print(f"\n{'='*60}")
+    print("Recent Pipeline Runs")
+    print(f"{'='*60}")
+    for r in runs:
+        print(f"  #{r.id}  {r.status:<12}  {r.run_type:<8}  {r.started_at}")
+
+    # Pending episodes
+    pending = session.query(Episode).filter_by(status="pending").count()
+    processing = session.query(Episode).filter_by(status="processing").count()
+    done = session.query(Episode).filter_by(status="done").count()
+    error = session.query(Episode).filter_by(status="error").count()
+    print(f"\nEpisodes: {pending} pending, {processing} processing, {done} done, {error} error")
+
+    # Open vote sessions
+    from .db import VoteSession
+    open_votes = session.query(VoteSession).filter_by(status="open").count()
+    print(f"Vote sessions: {open_votes} open")
+
+    # Artifact counts
+    from .db import Artifact
+    for status in ["planned", "generated", "in_review", "approved", "published"]:
+        count = session.query(Artifact).filter_by(status=status).count()
+        if count:
+            print(f"Artifacts ({status}): {count}")
+
+    session.close()
+
+
 def main():
     """CLI entry point."""
     import argparse
 
     parser = argparse.ArgumentParser(description="Merkos Rambam content pipeline")
-    parser.add_argument("--class-ids", type=int, nargs="*", help="Process specific class IDs")
-    parser.add_argument("--episode-ids", type=int, nargs="*", help="Process specific episode IDs")
-    parser.add_argument(
+    subparsers = parser.add_subparsers(dest="command", help="Command to run")
+
+    # run command
+    run_parser = subparsers.add_parser("run", help="Run the pipeline")
+    run_parser.add_argument("--class-ids", type=int, nargs="*", help="Process specific class IDs")
+    run_parser.add_argument("--episode-ids", type=int, nargs="*", help="Process specific episode IDs")
+    run_parser.add_argument(
         "--stages",
         nargs="*",
-        choices=["transcription", "sefaria", "alignment", "planning", "generation", "telegram"],
+        choices=["ingest", "transcription", "sefaria", "alignment", "planning", "generation", "telegram"],
         help="Run specific stages only",
     )
-    parser.add_argument("--config", type=str, help="Path to config.yaml")
+    run_parser.add_argument("--config", type=str, help="Path to config.yaml")
+
+    # status command
+    status_parser = subparsers.add_parser("status", help="Show pipeline status")
+    status_parser.add_argument("--config", type=str, help="Path to config.yaml")
 
     args = parser.parse_args()
-    run_pipeline(
-        class_ids=args.class_ids,
-        episode_ids=args.episode_ids,
-        stages=args.stages,
-        config_path=args.config,
-    )
+
+    if args.command == "status":
+        show_status(config_path=args.config)
+    elif args.command == "run":
+        run_pipeline(
+            class_ids=args.class_ids,
+            episode_ids=args.episode_ids,
+            stages=args.stages,
+            config_path=args.config,
+        )
+    else:
+        # Default: run the pipeline
+        run_pipeline(config_path=getattr(args, "config", None))
 
 
 if __name__ == "__main__":
