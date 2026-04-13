@@ -120,6 +120,7 @@ export default defineConfig(() => {
       environment: "jsdom",
       coverage: {
         include: ["src/**/*.{ts,tsx}"],
+        exclude: ["src/routeTree.gen.ts", "src/types/**", "src/routes/**", "src/main.tsx"],
         reporter: ["text", "html", "json-summary"],
       },
     },
