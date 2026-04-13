@@ -15,7 +15,11 @@ export function MiniPlayer() {
   const progress = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
-    <div className="fixed bottom-[calc(var(--nav-height)+var(--safe-bottom))] left-2 right-2 z-[199] bg-[var(--surface)] rounded-[14px] px-3.5 py-2.5 flex items-center gap-3 shadow-[0_8px_32px_rgba(0,0,0,0.5)] border border-[var(--divider)]">
+    <div
+      className="fixed bottom-[calc(var(--nav-height)+var(--safe-bottom))] left-2 right-2 z-[199] bg-[var(--surface)] rounded-[14px] px-3.5 py-2.5 flex items-center gap-3 shadow-[0_8px_32px_rgba(0,0,0,0.5)] border border-[var(--divider)]"
+      role="region"
+      aria-label="Audio player"
+    >
       {/* Art */}
       <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-[var(--elevated)] to-[#1a2020] flex items-center justify-center shrink-0 text-xl opacity-50">
         &#x1F3DB;
@@ -34,6 +38,7 @@ export function MiniPlayer() {
       {/* Play/Pause */}
       <button
         onClick={toggle}
+        aria-label={isPlaying ? "Pause" : "Play"}
         className="w-9 h-9 bg-white rounded-full flex items-center justify-center shrink-0"
       >
         {isPlaying ? (

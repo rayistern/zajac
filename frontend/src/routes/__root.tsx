@@ -10,7 +10,7 @@ export const Route = createRootRoute({
 function RootLayout() {
   return (
     <AudioPlayerProvider>
-      <div className="min-h-screen bg-[var(--bg)] text-white pb-[calc(var(--nav-height)+var(--safe-bottom)+80px)]">
+      <div className="min-h-screen bg-[var(--bg)] text-white pb-[calc(var(--nav-height)+var(--safe-bottom)+80px)]" role="application" lang="en">
         <Outlet />
         <MiniPlayer />
         <BottomNav />

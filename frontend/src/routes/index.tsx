@@ -3,6 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { TrackSelector } from "../components/navigation/TrackSelector";
 import { ContentFeed } from "../components/content/ContentFeed";
 import { SichosHighlight } from "../components/content/SichosHighlight";
+import { HeroSkeleton, FeedSkeleton } from "../components/content/Skeleton";
+import { EmptyState } from "../components/content/EmptyState";
+import { ErrorState } from "../components/content/ErrorState";
 import { useTrack } from "../hooks/useTrack";
 
 export const Route = createFileRoute("/")({
@@ -16,7 +19,7 @@ function todayDate() {
 function HomePage() {
   const { track, setTrack } = useTrack();
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["content", "today", track],
     queryFn: async () => {
       const res = await fetch(`/api/content/today?track=${track}`);
@@ -63,58 +66,70 @@ function HomePage() {
       <TrackSelector track={track} onSelect={setTrack} />
 
       {/* Today's Hero */}
-      <section className="bg-[rgba(29,185,84,0.08)] border border-[rgba(29,185,84,0.12)] rounded-[20px] p-5 mb-6 relative overflow-hidden">
-        <div className="absolute -top-10 -right-10 w-[120px] h-[120px] bg-[radial-gradient(circle,rgba(29,185,84,0.1),transparent_70%)] pointer-events-none" />
-        <div className="flex items-center gap-1.5 font-[family-name:var(--font-ui)] text-[9px] font-extrabold uppercase tracking-[2px] text-[var(--green)] mb-2.5">
-          <div className="w-1.5 h-1.5 bg-[var(--green)] rounded-full animate-pulse" />
-          TODAY'S RAMBAM
-        </div>
-        {isLoading ? (
-          <div className="h-24 flex items-center text-[var(--grey-dim)] text-sm">
-            Loading...
+      {isLoading ? (
+        <HeroSkeleton />
+      ) : error ? (
+        <ErrorState
+          message="Could not load today's content."
+          onRetry={() => refetch()}
+        />
+      ) : !data ? (
+        <EmptyState />
+      ) : (
+        <section
+          className="bg-[rgba(29,185,84,0.08)] border border-[rgba(29,185,84,0.12)] rounded-[20px] p-5 mb-6 relative overflow-hidden"
+          aria-label="Today's Rambam learning"
+        >
+          <div className="absolute -top-10 -right-10 w-[120px] h-[120px] bg-[radial-gradient(circle,rgba(29,185,84,0.1),transparent_70%)] pointer-events-none" />
+          <div className="flex items-center gap-1.5 font-[family-name:var(--font-ui)] text-[9px] font-extrabold uppercase tracking-[2px] text-[var(--green)] mb-2.5">
+            <div
+              className="w-1.5 h-1.5 bg-[var(--green)] rounded-full animate-pulse"
+              aria-hidden="true"
+            />
+            TODAY'S RAMBAM
           </div>
-        ) : data ? (
-          <>
-            <p className="font-[family-name:var(--font-ui)] text-[11px] font-semibold text-[var(--grey)] mb-1.5">
-              {data.hebrewDate ?? todayDate()}
-            </p>
-            <h2 className="font-[family-name:var(--font-ui)] text-[22px] font-extrabold mb-3 leading-tight">
-              {perakimLabel || "Today's Learning"}
-            </h2>
-            <div className="flex items-center gap-4 mb-4 font-[family-name:var(--font-ui)] text-[11px] font-semibold text-[var(--grey)]">
-              <span>{data.items?.length ?? 0} items</span>
-              <span>{perakim.length} perakim</span>
-            </div>
-            <button className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--green)] rounded-3xl font-[family-name:var(--font-ui)] text-[13px] font-bold text-[var(--bg)] shadow-[0_4px_16px_rgba(29,185,84,0.3)] hover:scale-[1.03] transition-transform">
-              <svg
-                className="w-4 h-4 fill-[var(--bg)]"
-                viewBox="0 0 24 24"
-              >
-                <polygon points="5 3 19 12 5 21 5 3" />
-              </svg>
-              Start Learning
-            </button>
-          </>
-        ) : error ? (
-          <p className="text-red-400 text-sm">
-            Could not load today's content.
+          <p className="font-[family-name:var(--font-ui)] text-[11px] font-semibold text-[var(--grey)] mb-1.5">
+            {data.hebrewDate ?? todayDate()}
           </p>
-        ) : (
-          <p className="text-[var(--grey-dim)] text-sm">
-            No content available for today.
-          </p>
-        )}
-      </section>
+          <h2 className="font-[family-name:var(--font-ui)] text-[22px] font-extrabold mb-3 leading-tight">
+            {perakimLabel || "Today's Learning"}
+          </h2>
+          <div className="flex items-center gap-4 mb-4 font-[family-name:var(--font-ui)] text-[11px] font-semibold text-[var(--grey)]">
+            <span>{data.items?.length ?? 0} items</span>
+            <span>{perakim.length} perakim</span>
+          </div>
+          <button
+            className="inline-flex items-center gap-2 px-6 py-3 bg-[var(--green)] rounded-3xl font-[family-name:var(--font-ui)] text-[13px] font-bold text-[var(--bg)] shadow-[0_4px_16px_rgba(29,185,84,0.3)] hover:scale-[1.03] active:scale-[0.98] transition-transform focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--green)]"
+            aria-label="Start today's learning"
+          >
+            <svg
+              className="w-4 h-4 fill-[var(--bg)]"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <polygon points="5 3 19 12 5 21 5 3" />
+            </svg>
+            Start Learning
+          </button>
+        </section>
+      )}
 
       {/* Content Feed */}
-      {data?.items && data.items.length > 0 && (
+      {isLoading ? (
+        <section className="mb-6">
+          <h3 className="font-[family-name:var(--font-ui)] text-base font-extrabold mb-3.5">
+            Today's Content
+          </h3>
+          <FeedSkeleton />
+        </section>
+      ) : data?.items && data.items.length > 0 ? (
         <section className="mb-6">
           <h3 className="font-[family-name:var(--font-ui)] text-base font-extrabold mb-3.5">
             Today's Content
           </h3>
           <ContentFeed items={data.items} />
         </section>
-      )}
+      ) : null}
 
       {/* Sichos */}
       {sichosData && sichosData.length > 0 && (

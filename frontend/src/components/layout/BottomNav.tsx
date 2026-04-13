@@ -33,7 +33,10 @@ export function BottomNav() {
   const location = useRouterState({ select: (s) => s.location.pathname });
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-[200] bg-[var(--glass-heavy)] backdrop-blur-[20px] border-t border-[var(--divider)] pb-[var(--safe-bottom)]">
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-[200] bg-[var(--glass-heavy)] backdrop-blur-[20px] border-t border-[var(--divider)] pb-[var(--safe-bottom)]"
+      aria-label="Main navigation"
+    >
       <div className="flex justify-around items-center h-[var(--nav-height)] max-w-[480px] mx-auto">
         {tabs.map((tab) => {
           const active = location === tab.path;
@@ -41,6 +44,8 @@ export function BottomNav() {
             <button
               key={tab.label}
               onClick={() => navigate({ to: tab.path as "/" })}
+              aria-label={tab.label}
+              aria-current={active ? "page" : undefined}
               className={`flex flex-col items-center gap-1 px-4 py-2 transition-colors ${
                 active ? "text-[var(--green)]" : "text-[var(--grey-dim)] hover:text-[var(--grey)]"
               }`}
