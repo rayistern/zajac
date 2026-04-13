@@ -12,7 +12,7 @@ const getRoute = createRoute({
   method: "get",
   path: "/",
   request: {
-    headers: [z.object({ "x-device-id": z.string().optional() })],
+    headers: z.object({ "x-device-id": z.string().optional() }),
   },
   responses: {
     200: {
@@ -26,7 +26,7 @@ const putRoute = createRoute({
   method: "put",
   path: "/",
   request: {
-    headers: [z.object({ "x-device-id": z.string() })],
+    headers: z.object({ "x-device-id": z.string() }),
     body: {
       content: { "application/json": { schema: prefsSchema } },
     },
