@@ -43,6 +43,13 @@ npx tsx --env-file=api/.env.dev api/scripts/seed-content.ts  # Seed sample data
 - All content types render through ContentFeed switch-on-contentType pattern
 - Schema ownership: Drizzle owns web tables, Alembic owns pipeline tables, same DB
 
+## Working style
+
+- Keep going without stopping to ask for permission. Just do the work.
+- Maintain a detailed log/journal in git commits — all problems, decisions, questions, solutions, ideas, and next steps.
+- Commit frequently with descriptive messages that capture the "why."
+- If something is blocked (e.g. no Docker, missing API keys), note it in the commit message and move on to the next unblocked task.
+
 ## Content types
 
 `perek_overview`, `conceptual_image`, `infographic`, `daily_chart`, `did_you_know`, `sichos_highlight`
