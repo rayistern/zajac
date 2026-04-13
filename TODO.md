@@ -28,17 +28,19 @@
 
 ### Validation & Testing
 
-- [ ] **Run API tests with Docker** — Start TestContainers, run `pnpm --filter api run test`, verify all 5 new test files pass (BLOCKED: no Docker in current env)
-- [x] **Check coverage percentages** — Frontend at 90.21% lines, passing 80% threshold
-- [x] **Add more tests if needed** — Expanded from 23 to 61 frontend tests across 17 files
+- [x] **Run API tests with Docker** — All 27 API tests pass with TestContainers (fixed preferences route bug and clearAll helper)
+- [x] **Check coverage percentages** — API: 94.4% lines, Frontend: 90.21% lines (both pass 80% threshold)
+- [x] **Add more tests if needed** — Expanded to 27 API + 61 frontend = 88 total tests
 
 ### Pipeline Smoke Test
 
-- [ ] **Install Python pipeline deps** — Set up venv, install all dependencies on target machine
+- [x] **Install Python pipeline deps** — venv set up with all dependencies
 - [x] **Create Alembic initial migration** — Hand-written migration (001), 18 tables with proper FK ordering and seed data
-- [ ] **Register a test RSS class** — Insert a Class record with an RSS feed URL into the database
-- [ ] **Run pipeline end-to-end** — Execute `python -m src.pipeline.main run` on a real episode, verify each stage
-- [ ] **Validate generated artifacts** — Check that images are generated, stored, and linked correctly
+- [x] **Verify migration runs** — Applied successfully on Postgres 18 container, all 19 tables (18 + alembic_version) created, 4 artifact_types seeded
+- [x] **Verify CLI works** — `status` and `run` commands work; fixed structlog config bug
+- [ ] **Register a test RSS class** — Insert a Class record with an RSS feed URL (BLOCKED: need real RSS feed URL from Rayi)
+- [ ] **Run pipeline end-to-end** — (BLOCKED: needs API keys for sofer.ai, OpenAI, Anthropic, Replicate)
+- [ ] **Validate generated artifacts** — (BLOCKED: depends on end-to-end run)
 
 ### Infrastructure & Deployment
 
