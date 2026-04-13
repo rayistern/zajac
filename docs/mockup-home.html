@@ -1,0 +1,1142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Merkos Rambam — Home</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Noto+Sans+Hebrew:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ========================================
+   DESIGN TOKENS — shared with mockup-v8
+   ======================================== */
+:root {
+  --bg: #121212;
+  --surface: #181818;
+  --elevated: #282828;
+  --green: #1DB954;
+  --green-dim: rgba(29,185,84,0.15);
+  --green-border: rgba(29,185,84,0.3);
+  --white: #FFFFFF;
+  --grey: #B3B3B3;
+  --grey-dim: #535353;
+  --glass: rgba(24,24,24,0.8);
+  --glass-heavy: rgba(12,12,12,0.94);
+  --divider: rgba(255,255,255,0.06);
+  --radius-sm: 12px;
+  --radius-lg: 20px;
+  --font-ui: 'Plus Jakarta Sans', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --font-hebrew: 'Noto Sans Hebrew', sans-serif;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --nav-height: 72px;
+  --gold: #C5A059;
+  --gold-dim: rgba(197,160,89,0.15);
+}
+
+/* ========================================
+   RESET & BASE
+   ======================================== */
+*, *::before, *::after {
+  margin: 0; padding: 0; box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+body {
+  background: var(--bg);
+  color: var(--white);
+  font-family: var(--font-body);
+  overflow-x: hidden;
+  min-height: 100vh;
+  padding-bottom: calc(var(--nav-height) + var(--safe-bottom) + 12px);
+}
+img { display: block; }
+button {
+  border: none; background: none; color: inherit;
+  font-family: inherit; cursor: pointer; outline: none;
+  -webkit-user-select: none; user-select: none;
+}
+a { color: inherit; text-decoration: none; }
+
+.tappable { transition: transform 0.15s ease; cursor: pointer; }
+.tappable:active { transform: scale(0.97); }
+
+/* ========================================
+   1. HEADER
+   ======================================== */
+.header {
+  padding: 20px 20px 0;
+  padding-top: max(20px, calc(env(safe-area-inset-top, 0px) + 12px));
+}
+.header__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.header__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.header__logo {
+  width: 36px;
+  height: 36px;
+  background: var(--green);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-hebrew);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--bg);
+}
+.header__title {
+  font-family: var(--font-ui);
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--white);
+}
+.header__actions {
+  display: flex;
+  gap: 8px;
+}
+.header__action-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--elevated);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s;
+}
+.header__action-btn:hover { background: rgba(255,255,255,0.12); }
+.header__action-btn svg {
+  width: 18px; height: 18px;
+  fill: none; stroke: var(--grey); stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* ========================================
+   2. TRACK SELECTOR
+   ======================================== */
+.track-selector {
+  display: flex;
+  gap: 8px;
+  padding: 0 20px;
+  margin-bottom: 24px;
+}
+.track-pill {
+  flex: 1;
+  padding: 10px 16px;
+  border-radius: 12px;
+  background: var(--surface);
+  border: 1.5px solid transparent;
+  text-align: center;
+  transition: all 0.3s;
+}
+.track-pill.active {
+  background: var(--green-dim);
+  border-color: var(--green-border);
+}
+.track-pill__label {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--grey-dim);
+  margin-bottom: 2px;
+}
+.track-pill.active .track-pill__label {
+  color: var(--green);
+}
+.track-pill__value {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--grey);
+}
+.track-pill.active .track-pill__value {
+  color: var(--white);
+}
+
+/* ========================================
+   3. TODAY'S LEARNING HERO
+   ======================================== */
+.today-hero {
+  margin: 0 20px 24px;
+  background: linear-gradient(135deg, rgba(29,185,84,0.08) 0%, rgba(29,185,84,0.02) 100%);
+  border: 1px solid rgba(29,185,84,0.12);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.today-hero::before {
+  content: '';
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 120px;
+  height: 120px;
+  background: radial-gradient(circle, rgba(29,185,84,0.1), transparent 70%);
+  pointer-events: none;
+}
+.today-hero__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-ui);
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--green);
+  margin-bottom: 10px;
+}
+.today-hero__eyebrow .pulse-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--green);
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+.today-hero__date {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--grey);
+  margin-bottom: 6px;
+}
+.today-hero__title {
+  font-family: var(--font-ui);
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--white);
+  margin-bottom: 4px;
+  line-height: 1.3;
+}
+.today-hero__title-he {
+  font-family: var(--font-hebrew);
+  font-size: 18px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.5);
+  direction: rtl;
+  margin-bottom: 12px;
+}
+.today-hero__meta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+.today-hero__meta-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--grey);
+}
+.today-hero__meta-item svg {
+  width: 14px; height: 14px;
+  fill: none; stroke: var(--grey-dim); stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.today-hero__play-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  background: var(--green);
+  border-radius: 24px;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--bg);
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 16px rgba(29,185,84,0.3);
+}
+.today-hero__play-btn:hover {
+  transform: scale(1.03);
+  box-shadow: 0 6px 24px rgba(29,185,84,0.4);
+}
+.today-hero__play-btn svg {
+  width: 16px; height: 16px;
+  fill: var(--bg);
+}
+
+/* ========================================
+   4. SECTION HEADINGS
+   ======================================== */
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  margin-bottom: 14px;
+}
+.section-heading__text {
+  font-family: var(--font-ui);
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--white);
+}
+.section-heading__link {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--grey-dim);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: color 0.3s;
+}
+.section-heading__link:hover { color: var(--grey); }
+
+/* ========================================
+   5. FEATURED CONTENT CAROUSEL
+   ======================================== */
+.carousel {
+  padding-left: 20px;
+  margin-bottom: 32px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.carousel::-webkit-scrollbar { display: none; }
+.carousel__inner {
+  display: flex;
+  gap: 14px;
+  padding-right: 20px;
+}
+.carousel-card {
+  flex-shrink: 0;
+  width: 260px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: transform 0.3s;
+}
+.carousel-card:hover { transform: translateY(-2px); }
+.carousel-card__image {
+  width: 100%;
+  height: 160px;
+  background: linear-gradient(135deg, var(--elevated) 0%, #1a2020 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+.carousel-card__image-icon {
+  font-size: 48px;
+  opacity: 0.3;
+}
+.carousel-card__badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-family: var(--font-ui);
+  font-size: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.carousel-card__badge--image {
+  background: rgba(29,185,84,0.2);
+  color: var(--green);
+}
+.carousel-card__badge--chart {
+  background: rgba(55,138,221,0.2);
+  color: #64B5F6;
+}
+.carousel-card__badge--infographic {
+  background: rgba(179,157,219,0.2);
+  color: #B39DDB;
+}
+.carousel-card__body {
+  padding: 14px;
+}
+.carousel-card__title {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+.carousel-card__subtitle {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--grey-dim);
+  line-height: 1.4;
+}
+.carousel-card__share {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--green);
+  opacity: 0.7;
+  transition: opacity 0.3s;
+}
+.carousel-card__share:hover { opacity: 1; }
+.carousel-card__share svg {
+  width: 12px; height: 12px;
+  fill: none; stroke: var(--green); stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* ========================================
+   6. PEREK LIST
+   ======================================== */
+.perek-list {
+  padding: 0 20px;
+  margin-bottom: 32px;
+}
+.perek-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--divider);
+  transition: background 0.3s;
+}
+.perek-item:last-child { border-bottom: none; }
+.perek-item__number {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: var(--elevated);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--grey);
+  flex-shrink: 0;
+}
+.perek-item__number--active {
+  background: var(--green-dim);
+  color: var(--green);
+  border: 1.5px solid var(--green-border);
+}
+.perek-item__info {
+  flex: 1;
+  min-width: 0;
+}
+.perek-item__title {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: 2px;
+}
+.perek-item__subtitle {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--grey-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.perek-item__artifacts {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.perek-item__artifact-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--grey-dim);
+}
+.perek-item__artifact-dot--image { background: var(--green); }
+.perek-item__artifact-dot--chart { background: #64B5F6; }
+.perek-item__artifact-dot--sichos { background: var(--gold); }
+.perek-item__chevron {
+  flex-shrink: 0;
+}
+.perek-item__chevron svg {
+  width: 16px; height: 16px;
+  fill: none; stroke: var(--grey-dim); stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* ========================================
+   7. SICHOS SECTION
+   ======================================== */
+.sichos-list {
+  padding: 0 20px;
+  margin-bottom: 32px;
+}
+.sichos-item {
+  background: rgba(197,160,89,0.06);
+  border: 1px solid rgba(197,160,89,0.12);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  margin-bottom: 10px;
+}
+.sichos-item__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-ui);
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--gold);
+  margin-bottom: 8px;
+}
+.sichos-item__dot {
+  width: 5px;
+  height: 5px;
+  background: var(--gold);
+  border-radius: 50%;
+}
+.sichos-item__ref {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: 4px;
+}
+.sichos-item__excerpt {
+  font-family: var(--font-body);
+  font-size: 12px;
+  line-height: 1.6;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 6px;
+}
+.sichos-item__source {
+  font-family: var(--font-hebrew);
+  font-size: 11px;
+  color: rgba(197,160,89,0.5);
+  direction: rtl;
+}
+
+/* ========================================
+   8. DID YOU KNOW
+   ======================================== */
+.dyk-banner {
+  margin: 0 20px 32px;
+  background: linear-gradient(135deg, var(--elevated) 0%, rgba(40,40,40,0.6) 100%);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+.dyk-banner::before {
+  content: '';
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  width: 80px;
+  height: 80px;
+  background: radial-gradient(circle, rgba(179,157,219,0.08), transparent 70%);
+  pointer-events: none;
+}
+.dyk-banner__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-ui);
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #B39DDB;
+  margin-bottom: 10px;
+}
+.dyk-banner__eyebrow-icon {
+  width: 18px;
+  height: 18px;
+  background: rgba(179,157,219,0.15);
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.dyk-banner__eyebrow-icon svg {
+  width: 11px; height: 11px;
+  stroke: #B39DDB; fill: none; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.dyk-banner__text {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.65;
+  color: rgba(255,255,255,0.85);
+}
+.dyk-banner__share {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 12px;
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 700;
+  color: #B39DDB;
+  opacity: 0.7;
+  transition: opacity 0.3s;
+}
+.dyk-banner__share:hover { opacity: 1; }
+.dyk-banner__share svg {
+  width: 12px; height: 12px;
+  fill: none; stroke: #B39DDB; stroke-width: 2;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* ========================================
+   9. STREAK / PROGRESS
+   ======================================== */
+.streak-banner {
+  margin: 0 20px 32px;
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.streak-banner__icon {
+  font-size: 28px;
+}
+.streak-banner__info { flex: 1; }
+.streak-banner__title {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: 2px;
+}
+.streak-banner__sub {
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: var(--grey-dim);
+}
+.streak-banner__days {
+  display: flex;
+  gap: 3px;
+}
+.streak-banner__day {
+  width: 8px;
+  height: 24px;
+  border-radius: 4px;
+  background: var(--elevated);
+}
+.streak-banner__day--done {
+  background: var(--green);
+}
+.streak-banner__day--today {
+  background: var(--green-dim);
+  border: 1px solid var(--green-border);
+}
+
+/* ========================================
+   10. BOTTOM NAV
+   ======================================== */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  background: var(--glass-heavy);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--divider);
+  padding-bottom: var(--safe-bottom);
+}
+.bottom-nav__inner {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  height: var(--nav-height);
+  max-width: 480px;
+  margin: 0 auto;
+}
+.bottom-nav__tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+  color: var(--grey-dim);
+  transition: color 0.3s;
+}
+.bottom-nav__tab.active { color: var(--green); }
+.bottom-nav__tab:not(.active):hover { color: var(--grey); }
+.bottom-nav__tab svg {
+  width: 22px; height: 22px;
+  fill: none; stroke: currentColor; stroke-width: 1.8;
+  stroke-linecap: round; stroke-linejoin: round;
+}
+.bottom-nav__tab.active svg { stroke-width: 2.2; }
+.bottom-nav__label {
+  font-family: var(--font-ui);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+/* ========================================
+   11. NOW PLAYING MINI BAR
+   ======================================== */
+.mini-player {
+  position: fixed;
+  bottom: calc(var(--nav-height) + var(--safe-bottom));
+  left: 8px;
+  right: 8px;
+  z-index: 199;
+  background: var(--surface);
+  border-radius: 14px;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  border: 1px solid var(--divider);
+}
+.mini-player__art {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--elevated), #1a2020);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 20px;
+  opacity: 0.5;
+}
+.mini-player__info { flex: 1; min-width: 0; }
+.mini-player__title {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--white);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mini-player__sub {
+  font-family: var(--font-body);
+  font-size: 10px;
+  color: var(--grey-dim);
+}
+.mini-player__controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.mini-player__btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+.mini-player__btn svg {
+  width: 18px; height: 18px;
+  fill: var(--white);
+}
+.mini-player__play {
+  width: 36px;
+  height: 36px;
+  background: var(--white);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.mini-player__play svg {
+  width: 14px; height: 14px;
+  fill: var(--bg);
+  margin-left: 2px;
+}
+.mini-player__progress {
+  position: absolute;
+  bottom: 0;
+  left: 14px;
+  right: 14px;
+  height: 2px;
+  background: var(--elevated);
+  border-radius: 1px;
+}
+.mini-player__progress-fill {
+  height: 100%;
+  width: 33%;
+  background: var(--green);
+  border-radius: 1px;
+}
+
+/* ========================================
+   RESPONSIVE — max-width container
+   ======================================== */
+@media (min-width: 480px) {
+  body {
+    max-width: 430px;
+    margin: 0 auto;
+    box-shadow: 0 0 60px rgba(0,0,0,0.5);
+    min-height: 100vh;
+  }
+  .bottom-nav {
+    max-width: 430px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .mini-player {
+    max-width: 414px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ========================================
+     1. HEADER
+     ======================================== -->
+<header class="header">
+  <div class="header__top">
+    <div class="header__brand">
+      <div class="header__logo">&#x05E8;</div>
+      <div class="header__title">Rambam</div>
+    </div>
+    <div class="header__actions">
+      <button class="header__action-btn tappable" aria-label="Notifications">
+        <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      </button>
+      <button class="header__action-btn tappable" aria-label="Settings">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ========================================
+     2. TRACK SELECTOR
+     ======================================== -->
+<section class="track-selector">
+  <button class="track-pill active tappable" id="track3">
+    <div class="track-pill__label">3 Perakim</div>
+    <div class="track-pill__value">Ch. 1 &ndash; 3</div>
+  </button>
+  <button class="track-pill tappable" id="track1">
+    <div class="track-pill__label">1 Perek</div>
+    <div class="track-pill__value">Ch. 1</div>
+  </button>
+</section>
+
+<!-- ========================================
+     3. TODAY'S LEARNING HERO
+     ======================================== -->
+<section class="today-hero tappable">
+  <div class="today-hero__eyebrow">
+    <div class="pulse-dot"></div>
+    TODAY'S RAMBAM
+  </div>
+  <div class="today-hero__date">5 Nissan 5786 &middot; April 5, 2026</div>
+  <div class="today-hero__title">Hilchos Beis HaBechirah</div>
+  <div class="today-hero__title-he">הלכות בית הבחירה</div>
+  <div class="today-hero__meta">
+    <div class="today-hero__meta-item">
+      <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      6 Halachos
+    </div>
+    <div class="today-hero__meta-item">
+      <svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+      5 Artifacts
+    </div>
+    <div class="today-hero__meta-item">
+      <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      2 Sichos
+    </div>
+  </div>
+  <button class="today-hero__play-btn tappable">
+    <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+    Start Learning
+  </button>
+</section>
+
+<!-- ========================================
+     4. FEATURED VISUAL CONTENT
+     ======================================== -->
+<div class="section-heading">
+  <div class="section-heading__text">Today's Visuals</div>
+  <button class="section-heading__link tappable">See All</button>
+</div>
+
+<div class="carousel">
+  <div class="carousel__inner">
+
+    <div class="carousel-card tappable">
+      <div class="carousel-card__image" style="background: linear-gradient(160deg, #0d1117, #111820, #0a1628);">
+        <div class="carousel-card__badge carousel-card__badge--image">Illustration</div>
+        <div class="carousel-card__image-icon">&#x1F3DB;</div>
+      </div>
+      <div class="carousel-card__body">
+        <div class="carousel-card__title">Structure of the Mikdash</div>
+        <div class="carousel-card__subtitle">Sanctuary, Holy of Holies, and Courtyard layout</div>
+        <button class="carousel-card__share tappable">
+          <svg viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+          Share
+        </button>
+      </div>
+    </div>
+
+    <div class="carousel-card tappable">
+      <div class="carousel-card__image" style="background: linear-gradient(160deg, #0d1117, #10160e, #0d1117);">
+        <div class="carousel-card__badge carousel-card__badge--chart">Timeline</div>
+        <div class="carousel-card__image-icon">&#x1F553;</div>
+      </div>
+      <div class="carousel-card__body">
+        <div class="carousel-card__title">From Desert to Eternal City</div>
+        <div class="carousel-card__subtitle">The journey of the Sanctuary: Gilgal, Shiloh, Nov, Givon, Jerusalem</div>
+        <button class="carousel-card__share tappable">
+          <svg viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+          Share
+        </button>
+      </div>
+    </div>
+
+    <div class="carousel-card tappable">
+      <div class="carousel-card__image" style="background: linear-gradient(160deg, #0d1117, #1a1520, #0d1117);">
+        <div class="carousel-card__badge carousel-card__badge--infographic">Infographic</div>
+        <div class="carousel-card__image-icon">&#x1F52F;</div>
+      </div>
+      <div class="carousel-card__body">
+        <div class="carousel-card__title">Seven Sacred Vessels</div>
+        <div class="carousel-card__subtitle">The seven essential utensils of the Mikdash</div>
+        <button class="carousel-card__share tappable">
+          <svg viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+          Share
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ========================================
+     5. DID YOU KNOW
+     ======================================== -->
+<div class="dyk-banner tappable">
+  <div class="dyk-banner__eyebrow">
+    <div class="dyk-banner__eyebrow-icon">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+    </div>
+    DID YOU KNOW
+  </div>
+  <div class="dyk-banner__text">No iron tools were permitted for the Altar's stones &mdash; iron shortens life (war), while the Altar prolongs life (atonement). Even the ramp to the altar had to be built without steps, so the priests wouldn't take wide strides in a disrespectful manner.</div>
+  <button class="dyk-banner__share tappable">
+    <svg viewBox="0 0 24 24"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+    Share this insight
+  </button>
+</div>
+
+<!-- ========================================
+     6. PEREK-BY-PEREK LIST
+     ======================================== -->
+<div class="section-heading">
+  <div class="section-heading__text">Perakim</div>
+</div>
+
+<div class="perek-list">
+
+  <div class="perek-item tappable">
+    <div class="perek-item__number perek-item__number--active">1</div>
+    <div class="perek-item__info">
+      <div class="perek-item__title">Perek 1 &middot; Hilchos Beis HaBechirah</div>
+      <div class="perek-item__subtitle">The commandment to build, the journey of the Sanctuary, essential structures</div>
+    </div>
+    <div class="perek-item__artifacts">
+      <div class="perek-item__artifact-dot perek-item__artifact-dot--image"></div>
+      <div class="perek-item__artifact-dot perek-item__artifact-dot--image"></div>
+      <div class="perek-item__artifact-dot perek-item__artifact-dot--chart"></div>
+      <div class="perek-item__artifact-dot perek-item__artifact-dot--sichos"></div>
+    </div>
+    <div class="perek-item__chevron">
+      <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+  </div>
+
+  <div class="perek-item tappable">
+    <div class="perek-item__number perek-item__number--active">2</div>
+    <div class="perek-item__info">
+      <div class="perek-item__title">Perek 2 &middot; Hilchos Beis HaBechirah</div>
+      <div class="perek-item__subtitle">The Altar's dimensions, the ramp, prohibited materials</div>
+    </div>
+    <div class="perek-item__artifacts">
+      <div class="perek-item__artifact-dot perek-item__artifact-dot--image"></div>
+      <div class="perek-item__artifact-dot perek-item__artifact-dot--chart"></div>
+    </div>
+    <div class="perek-item__chevron">
+      <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+  </div>
+
+  <div class="perek-item tappable">
+    <div class="perek-item__number perek-item__number--active">3</div>
+    <div class="perek-item__info">
+      <div class="perek-item__title">Perek 3 &middot; Hilchos Beis HaBechirah</div>
+      <div class="perek-item__subtitle">The wash basin, the Entrance Hall, and the chambers</div>
+    </div>
+    <div class="perek-item__artifacts">
+      <div class="perek-item__artifact-dot perek-item__artifact-dot--image"></div>
+      <div class="perek-item__artifact-dot perek-item__artifact-dot--sichos"></div>
+    </div>
+    <div class="perek-item__chevron">
+      <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+    </div>
+  </div>
+
+</div>
+
+<!-- ========================================
+     7. SICHOS REFERENCES
+     ======================================== -->
+<div class="section-heading">
+  <div class="section-heading__text">The Rebbe's Insights</div>
+  <button class="section-heading__link tappable">View All</button>
+</div>
+
+<div class="sichos-list">
+
+  <div class="sichos-item tappable">
+    <div class="sichos-item__badge">
+      <div class="sichos-item__dot"></div>
+      THE REBBE'S INSIGHT &middot; PEREK 1
+    </div>
+    <div class="sichos-item__ref">Portable vs. Permanent Holiness</div>
+    <div class="sichos-item__excerpt">The Mishkan was portable &mdash; its sanctity came from its components, not the ground it stood on. The Beis HaMikdash is the opposite: the place itself is holy, even without the building.</div>
+    <div class="sichos-item__source">&#x200F;&#x05DC;&#x05E7;&#x05D5;&#x05D8;&#x05D9; &#x05E9;&#x05D9;&#x05D7;&#x05D5;&#x05EA; &#x05D7;&#x05DB;&#x05F4;&#x05D8; &#x05E2;&#x05F3; 71</div>
+  </div>
+
+  <div class="sichos-item tappable">
+    <div class="sichos-item__badge">
+      <div class="sichos-item__dot"></div>
+      THE REBBE'S INSIGHT &middot; PEREK 3
+    </div>
+    <div class="sichos-item__ref">The Ascending Levels of Holiness</div>
+    <div class="sichos-item__excerpt">The Temple required ascending steps between each level of holiness &mdash; the spiritual gradations had to be expressed in physical space. This teaches that spiritual growth must be embodied in concrete, tangible action.</div>
+    <div class="sichos-item__source">&#x200F;&#x05DC;&#x05E7;&#x05D5;&#x05D8;&#x05D9; &#x05E9;&#x05D9;&#x05D7;&#x05D5;&#x05EA; &#x05D7;&#x05D9;&#x05F4;&#x05D0; &#x05E2;&#x05F3; 155</div>
+  </div>
+
+</div>
+
+<!-- ========================================
+     8. STREAK / PROGRESS
+     ======================================== -->
+<div class="streak-banner tappable">
+  <div class="streak-banner__icon">&#x1F525;</div>
+  <div class="streak-banner__info">
+    <div class="streak-banner__title">5-Day Streak</div>
+    <div class="streak-banner__sub">Keep it going!</div>
+  </div>
+  <div class="streak-banner__days">
+    <div class="streak-banner__day streak-banner__day--done"></div>
+    <div class="streak-banner__day streak-banner__day--done"></div>
+    <div class="streak-banner__day streak-banner__day--done"></div>
+    <div class="streak-banner__day streak-banner__day--done"></div>
+    <div class="streak-banner__day streak-banner__day--done"></div>
+    <div class="streak-banner__day streak-banner__day--today"></div>
+    <div class="streak-banner__day"></div>
+  </div>
+</div>
+
+<!-- ========================================
+     MINI PLAYER (persistent bottom bar)
+     ======================================== -->
+<div class="mini-player tappable">
+  <div class="mini-player__art">&#x1F3DB;</div>
+  <div class="mini-player__info">
+    <div class="mini-player__title">Hilchos Beis HaBechirah &middot; Perek 1</div>
+    <div class="mini-player__sub">Rabbi Zajac &middot; 15:42 / 47:18</div>
+  </div>
+  <div class="mini-player__controls">
+    <button class="mini-player__play tappable" aria-label="Play">
+      <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+    </button>
+  </div>
+  <div class="mini-player__progress">
+    <div class="mini-player__progress-fill"></div>
+  </div>
+</div>
+
+<!-- ========================================
+     BOTTOM NAV
+     ======================================== -->
+<nav class="bottom-nav">
+  <div class="bottom-nav__inner">
+    <button class="bottom-nav__tab active tappable" aria-label="Home">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span class="bottom-nav__label">Home</span>
+    </button>
+    <button class="bottom-nav__tab tappable" aria-label="Search">
+      <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <span class="bottom-nav__label">Search</span>
+    </button>
+    <button class="bottom-nav__tab tappable" aria-label="Saved">
+      <svg viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/></svg>
+      <span class="bottom-nav__label">Saved</span>
+    </button>
+    <button class="bottom-nav__tab tappable" aria-label="Profile">
+      <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span class="bottom-nav__label">Profile</span>
+    </button>
+  </div>
+</nav>
+
+<!-- ========================================
+     SCRIPT — INTERACTIONS
+     ======================================== -->
+<script>
+(function() {
+  'use strict';
+
+  // Track selector
+  const tracks = document.querySelectorAll('.track-pill');
+  tracks.forEach(t => t.addEventListener('click', () => {
+    tracks.forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+  }));
+
+  // Tab tappable feedback
+  document.querySelectorAll('.tappable').forEach(el => {
+    el.addEventListener('touchstart', () => {}, { passive: true });
+  });
+})();
+</script>
+
+</body>
+</html>
