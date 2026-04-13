@@ -117,6 +117,7 @@ export default defineConfig(() => {
       }),
     ].filter(Boolean),
     test: {
+      environment: "jsdom",
       coverage: {
         include: ["src/**/*.{ts,tsx}"],
         reporter: ["text", "html", "json-summary"],
