@@ -1,0 +1,24 @@
+# Secrets
+.env
+
+# Local config overrides
+config.local.yaml
+
+# Pipeline outputs
+downloads/
+transcripts/
+images/
+pipeline_state.db
+pipeline.log
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+dist/
+build/
+
+# OS
+.DS_Store
+Thumbs.db

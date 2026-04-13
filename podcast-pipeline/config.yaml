@@ -1,0 +1,158 @@
+# =============================================================================
+# Podcast Pipeline — Main Configuration
+# =============================================================================
+# Copy this file to config.local.yaml for local overrides (gitignored).
+# All API keys should live in .env — reference them by name here, never hardcode.
+
+# ---------------------------------------------------------------------------
+# RSS / Episode Selection
+# ---------------------------------------------------------------------------
+rss:
+  feed_url: "https://feeds.example.com/mypodcast.rss"
+  # How many of the most-recent episodes to process per run
+  max_episodes: 1
+  # Only process episodes newer than this many days (0 = no limit)
+  max_age_days: 0
+  # Re-process an episode even if it has been processed before
+  force_reprocess: false
+
+# ---------------------------------------------------------------------------
+# Audio Download
+# ---------------------------------------------------------------------------
+download:
+  output_dir: "./downloads"
+  # Maximum file size in MB before we abort (0 = no limit)
+  max_size_mb: 500
+  # Retry settings
+  retries: 3
+  retry_delay_seconds: 5
+
+# ---------------------------------------------------------------------------
+# Transcription
+# ---------------------------------------------------------------------------
+transcription:
+  # Provider: "assemblyai" | "openai_whisper" | "deepgram"
+  provider: "assemblyai"
+
+  assemblyai:
+    # Model: "best" (most accurate) | "nano" (fastest/cheapest)
+    speech_model: "best"
+    # Enable AssemblyAI's auto-chapter detection
+    auto_chapters: true
+    # Speaker diarisation (labels who is speaking)
+    speaker_labels: true
+    # Summarisation per chapter
+    summarization: true
+    summarization_model: "informative"   # "informative" | "conversational" | "catchy"
+    language_code: "en"
+
+  openai_whisper:
+    model: "whisper-1"
+    language: "en"
+    # Chunk audio into N-minute segments (Whisper has a 25 MB file limit)
+    chunk_minutes: 10
+
+  deepgram:
+    model: "nova-2"
+    language: "en"
+    smart_format: true
+
+  # Output directory for raw transcripts
+  output_dir: "./transcripts"
+
+# ---------------------------------------------------------------------------
+# Chapter Splitting
+# ---------------------------------------------------------------------------
+chapters:
+  # Strategy: "provider" (use timestamps from transcription provider),
+  #           "llm" (ask LLM to split), or "both" (provider first, fallback to llm)
+  strategy: "both"
+
+  # Used when strategy includes "llm"
+  llm:
+    # Provider: "openai" | "anthropic" | "google"
+    provider: "anthropic"
+    model: "claude-opus-4-6"
+    # Minimum word count per chapter before LLM splitting is triggered
+    min_words_per_chapter: 200
+    # Maximum chapters to generate if no provider timestamps exist
+    max_chapters: 10
+
+# ---------------------------------------------------------------------------
+# Image Prompt Generation
+# ---------------------------------------------------------------------------
+image_prompt:
+  llm:
+    provider: "anthropic"
+    model: "claude-sonnet-4-6"
+  # Inject these words into every generated prompt (e.g. consistent art style)
+  style_suffix: "cinematic, dramatic lighting, high quality digital art, 16:9 aspect ratio"
+  # Maximum characters for the final image prompt sent to the image generator
+  max_length: 800
+
+# ---------------------------------------------------------------------------
+# Image Generation
+# ---------------------------------------------------------------------------
+image_generation:
+  # Provider: "openai_dalle" | "stability_ai" | "replicate"
+  provider: "openai_dalle"
+
+  openai_dalle:
+    model: "dall-e-3"           # "dall-e-3" | "dall-e-2"
+    size: "1792x1024"           # DALL-E 3 widescreen
+    quality: "hd"               # "standard" | "hd"
+    style: "vivid"              # "vivid" | "natural"
+    n: 1
+
+  stability_ai:
+    model: "stable-diffusion-xl-1024-v1-0"
+    steps: 40
+    cfg_scale: 7
+    width: 1344
+    height: 768
+
+  replicate:
+    model: "black-forest-labs/flux-1.1-pro"
+    width: 1344
+    height: 768
+    num_inference_steps: 28
+    guidance: 3.5
+
+  # Where to save generated images locally
+  output_dir: "./images"
+
+# ---------------------------------------------------------------------------
+# Telegram
+# ---------------------------------------------------------------------------
+telegram:
+  # Retrieve your token from @BotFather, chat_id from @userinfobot
+  # Set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID in .env
+  parse_mode: "HTML"            # "HTML" | "Markdown"
+  # Send one message per chapter, or bundle the entire episode
+  send_mode: "per_chapter"      # "per_chapter" | "episode_summary"
+  # Include the episode title / show title in every chapter message
+  include_episode_header: true
+  # Disable link previews in messages
+  disable_web_page_preview: true
+  # Seconds to wait between messages (avoids Telegram rate limits)
+  message_delay_seconds: 2
+  # Maximum caption length (Telegram limit is 1024)
+  max_caption_length: 900
+
+# ---------------------------------------------------------------------------
+# Pipeline Behaviour
+# ---------------------------------------------------------------------------
+pipeline:
+  # Path to the prompts file
+  prompts_file: "./prompts.yaml"
+  # SQLite database to track processed episodes (avoids re-runs)
+  state_db: "./pipeline_state.db"
+  # Delete local audio files after processing to save disk space
+  cleanup_audio: false
+  # Delete local transcript files after processing
+  cleanup_transcripts: false
+  # Concurrency: number of chapter images to generate in parallel
+  image_concurrency: 2
+  # Verbose logging
+  log_level: "INFO"             # "DEBUG" | "INFO" | "WARNING" | "ERROR"
+  log_file: "./pipeline.log"

@@ -1,0 +1,127 @@
+# =============================================================================
+# Podcast Pipeline — Prompts Configuration
+# =============================================================================
+# All prompts support the following template variables:
+#
+#   {podcast_title}     - Name of the podcast / show
+#   {episode_title}     - Title of the specific episode
+#   {episode_number}    - Episode number (if available)
+#   {chapter_number}    - 1-based index of the current chapter
+#   {chapter_total}     - Total number of chapters in this episode
+#   {chapter_title}     - Title of the chapter (from provider or LLM)
+#   {chapter_summary}   - Short summary of the chapter
+#   {chapter_text}      - Full transcript text of the chapter
+#   {style_suffix}      - Value of image_prompt.style_suffix from config.yaml
+#
+# Use double-braces {{ }} to include a literal brace in your prompt.
+
+# ---------------------------------------------------------------------------
+# LLM Chapter Splitter
+# Used when chapters.strategy = "llm" or "both"
+# ---------------------------------------------------------------------------
+chapter_split:
+  system: |
+    You are an expert podcast editor and content analyst. Your job is to intelligently
+    divide podcast transcripts into logical chapters or sections that flow naturally
+    and cover coherent topics.
+  user: |
+    Below is the full transcript of a podcast episode.
+
+    Podcast: {podcast_title}
+    Episode: {episode_title}
+
+    TRANSCRIPT:
+    {chapter_text}
+
+    ---
+    Your task: Divide this transcript into between 3 and {max_chapters} chapters.
+    Each chapter should cover a distinct topic or narrative arc.
+
+    Respond ONLY with valid JSON (no markdown, no code fences) in this exact schema:
+    {{
+      "chapters": [
+        {{
+          "title": "Short chapter title (max 60 chars)",
+          "summary": "2–3 sentence summary of what this chapter covers",
+          "start_word_index": 0,
+          "end_word_index": 150
+        }}
+      ]
+    }}
+
+    Rules:
+    - start_word_index and end_word_index refer to word positions in the transcript (0-based).
+    - Chapters must be contiguous and non-overlapping.
+    - The first chapter must start at word 0.
+    - The last chapter must end at the final word.
+    - Minimum chapter length: {min_words} words.
+
+# ---------------------------------------------------------------------------
+# Image Prompt Generator
+# Used to turn a chapter summary into a rich image generation prompt
+# ---------------------------------------------------------------------------
+image_prompt:
+  system: |
+    You are a world-class creative director and visual storyteller. You craft precise,
+    evocative prompts for AI image generators. Your prompts produce stunning,
+    thematic images that visually represent complex ideas from podcast discussions.
+
+    Rules you always follow:
+    - Write in descriptive noun-phrase style (not sentences).
+    - Be specific about setting, mood, lighting, colour palette.
+    - Never mention real people by name.
+    - Never include text, words, letters, or typography in the scene.
+    - Keep the prompt focused on a single coherent scene.
+    - Avoid generic or cliché imagery.
+  user: |
+    Create an image generation prompt for a chapter from the following podcast.
+
+    Podcast: {podcast_title}
+    Episode: {episode_title}
+    Chapter {chapter_number} of {chapter_total}: "{chapter_title}"
+
+    Chapter summary:
+    {chapter_summary}
+
+    Key excerpt from transcript:
+    {chapter_excerpt}
+
+    ---
+    Craft ONE vivid image prompt that visually captures the essence of this chapter.
+    The image should work as a standalone visual even for someone who hasn't heard the podcast.
+
+    Append this style directive at the end (do not alter it):
+    {style_suffix}
+
+    Respond ONLY with the image prompt text — no preamble, no explanation.
+
+# ---------------------------------------------------------------------------
+# Telegram Message Formatter (per chapter)
+# ---------------------------------------------------------------------------
+telegram:
+  chapter_message: |
+    🎙 <b>{podcast_title}</b>
+    📻 <i>{episode_title}</i>
+
+    <b>Chapter {chapter_number}/{chapter_total}: {chapter_title}</b>
+
+    {chapter_summary}
+
+  episode_summary_intro: |
+    🎙 <b>{podcast_title}</b>
+    📻 <i>{episode_title}</i>
+
+    Here's a visual breakdown of today's episode in {chapter_total} chapters 👇
+
+  episode_summary_chapter: |
+    <b>{chapter_number}. {chapter_title}</b>
+    {chapter_summary}
+
+# ---------------------------------------------------------------------------
+# Fallback / Error Captions
+# ---------------------------------------------------------------------------
+fallback:
+  image_generation_failed: |
+    ⚠️ Image generation failed for this chapter.
+    <b>Chapter {chapter_number}: {chapter_title}</b>
+    {chapter_summary}
