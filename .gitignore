@@ -42,3 +42,5 @@ out.json
 migrate-output.json
 migrate-prod-output.json
 nul
+pipeline/.venv/
+__pycache__/
