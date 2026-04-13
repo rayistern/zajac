@@ -1,0 +1,52 @@
+name: Deploy Staging
+
+on:
+  push:
+    branches:
+      - test
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: staging
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        run: pnpm --filter ./frontend run build
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: arn:aws:iam::671285285244:role/github-oidc-cdk-deploy
+          role-session-name: ${{ github.run_id }}-staging
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+
+      - name: Deploy staging stack
+        env:
+          DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
+          CLOUDFRONT_CERT_ARN: ${{ vars.CLOUDFRONT_CERT_ARN }}
+        run: pnpm --filter ./infra run cdk deploy --all --require-approval never -c environmentName=staging -c domainName="$DOMAIN_NAME" -c cloudFrontCertificateArn="$CLOUDFRONT_CERT_ARN"

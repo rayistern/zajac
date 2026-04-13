@@ -1,0 +1,422 @@
+name: PR Preview Deployment
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review, closed]
+
+permissions:
+  contents: read
+  pull-requests: write
+  id-token: write
+
+concurrency:
+  group: pr-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  detect_changes:
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    outputs:
+      infra_changed: ${{ steps.filter.outputs.infra }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Detect infra file changes
+        id: filter
+        uses: dorny/paths-filter@v4
+        with:
+          filters: |
+            infra:
+              - 'infra/**'
+
+  gate_deploy:
+    if: github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    needs: detect_changes
+    permissions:
+      contents: read
+      pull-requests: write
+    outputs:
+      should_deploy: ${{ steps.decision.outputs.should_deploy }}
+      reason: ${{ steps.decision.outputs.reason }}
+
+    steps:
+      - name: Read PR command comments
+        id: commands
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const comments = await github.paginate(
+              github.rest.issues.listComments,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                per_page: 100,
+              }
+            )
+
+            const deployPattern = /^\/deploy\s*$/m
+            const approvePattern = /^\/approve\s*$/m
+
+            const hasDeploy = comments.some((comment) => deployPattern.test(comment.body || ''))
+            const hasApprove = comments.some((comment) => approvePattern.test(comment.body || ''))
+
+            core.setOutput('has_deploy', String(hasDeploy))
+            core.setOutput('has_approve', String(hasApprove))
+
+      - name: Check whether infra team was already tagged
+        id: infra-tag
+        if: needs.detect_changes.outputs.infra_changed == 'true' && steps.commands.outputs.has_deploy == 'true'
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const marker = '<!-- pr-preview-infra-approval-requested -->'
+            const comments = await github.paginate(
+              github.rest.issues.listComments,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                per_page: 100,
+              }
+            )
+
+            const alreadyTagged = comments.some((comment) => (comment.body || '').includes(marker))
+            core.setOutput('already_tagged', String(alreadyTagged))
+
+      - name: Request infra approval in PR comments
+        if: needs.detect_changes.outputs.infra_changed == 'true' && steps.commands.outputs.has_deploy == 'true' && steps.commands.outputs.has_approve != 'true' && steps.infra-tag.outputs.already_tagged != 'true'
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const marker = '<!-- pr-preview-infra-approval-requested -->'
+            const body = `${marker}\n/deploy detected with infra changes. Tagging @merkos-302/infra-team for review.\nPlease comment /approve to allow preview deployment.`
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              body,
+            })
+
+      - name: Decide whether deployment is allowed
+        id: decision
+        uses: actions/github-script@v8
+        env:
+          INFRA_CHANGED: ${{ needs.detect_changes.outputs.infra_changed }}
+          HAS_DEPLOY: ${{ steps.commands.outputs.has_deploy }}
+          HAS_APPROVE: ${{ steps.commands.outputs.has_approve }}
+        with:
+          script: |
+            const infraChanged = process.env.INFRA_CHANGED === 'true'
+            const hasDeploy = process.env.HAS_DEPLOY === 'true'
+            const hasApprove = process.env.HAS_APPROVE === 'true'
+
+            let shouldDeploy = false
+            let reason = 'missing_deploy_command'
+
+            if (!hasDeploy) {
+              shouldDeploy = false
+              reason = 'missing_deploy_command'
+            } else if (!infraChanged) {
+              shouldDeploy = true
+              reason = 'deploy_command_present_no_infra_changes'
+            } else if (!hasApprove) {
+              shouldDeploy = false
+              reason = 'infra_changed_waiting_for_approve_command'
+            } else {
+              shouldDeploy = true
+              reason = 'infra_changed_approve_command_present'
+            }
+
+            core.setOutput('should_deploy', String(shouldDeploy))
+            core.setOutput('reason', reason)
+
+  deploy_preview_standard:
+    if: github.event.action != 'closed' && github.event.pull_request.draft == false && needs.detect_changes.outputs.infra_changed != 'true' && needs.gate_deploy.outputs.should_deploy == 'true'
+    runs-on: ubuntu-latest
+    needs: [detect_changes, gate_deploy]
+    environment: pr-preview
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        run: pnpm --filter ./frontend run build
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: arn:aws:iam::671285285244:role/github-oidc-cdk-deploy
+          role-session-name: ${{ github.run_id }}-pr-preview
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+
+      - name: Deploy PR preview stack
+        id: deploy
+        env:
+          PREVIEW_ENV_NAME: pr-${{ github.event.pull_request.number }}
+          DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
+          CLOUDFRONT_CERT_ARN: ${{ vars.CLOUDFRONT_CERT_ARN }}
+        run: pnpm --filter ./infra run cdk deploy --all --require-approval never --outputs-file "$GITHUB_WORKSPACE/cdk-outputs.json" -c environmentName="$PREVIEW_ENV_NAME" -c domainName="$DOMAIN_NAME" -c cloudFrontCertificateArn="$CLOUDFRONT_CERT_ARN"
+
+      - name: Resolve preview URL
+        id: preview-url
+        uses: actions/github-script@v8
+        env:
+          PREVIEW_ENV_NAME: pr-${{ github.event.pull_request.number }}
+          CDK_OUTPUTS_PATH: ${{ github.workspace }}/cdk-outputs.json
+        with:
+          script: |
+            const fs = require('node:fs')
+            const stackName = `InfraStack-${process.env.PREVIEW_ENV_NAME}`
+            const outputsPath = process.env.CDK_OUTPUTS_PATH
+            const fallbackPath = 'infra/cdk-outputs.json'
+            const resolvedOutputsPath = fs.existsSync(outputsPath)
+              ? outputsPath
+              : fs.existsSync(fallbackPath)
+                ? fallbackPath
+                : null
+
+            if (!resolvedOutputsPath) {
+              core.setFailed(`Unable to find CDK outputs file at '${outputsPath}' or '${fallbackPath}'`)
+              return
+            }
+            const outputs = JSON.parse(fs.readFileSync(resolvedOutputsPath, 'utf8'))
+
+            const stackOutputs = outputs[stackName] || {}
+            const urlEntry = Object.entries(stackOutputs).find(([key]) => key.endsWith('CloudFrontUrl'))
+            const previewUrl = urlEntry?.[1]
+
+            if (!previewUrl) {
+              core.setFailed(`Unable to find CloudFront URL output in ${resolvedOutputsPath} for stack ${stackName}`)
+              return
+            }
+
+            core.setOutput('preview_url', previewUrl)
+
+      - name: Comment preview URL on PR
+        uses: actions/github-script@v8
+        env:
+          PREVIEW_URL: ${{ steps.preview-url.outputs.preview_url }}
+        with:
+          script: |
+            const marker = '<!-- pr-preview-url -->'
+            const body = `${marker}\nPreview environment deployed: ${process.env.PREVIEW_URL}`
+
+            const comments = await github.paginate(
+              github.rest.issues.listComments,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                per_page: 100,
+              }
+            )
+
+            const existingComment = comments.find((comment) =>
+              (comment.body || '').includes(marker)
+            )
+
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body,
+              })
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body,
+              })
+            }
+
+      - name: Mark preview as deployed
+        uses: actions/github-script@v8
+        with:
+          script: |
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              labels: ['preview-deployed'],
+            })
+
+  deploy_preview_infra_changes:
+    if: github.event.action != 'closed' && github.event.pull_request.draft == false && needs.detect_changes.outputs.infra_changed == 'true' && needs.gate_deploy.outputs.should_deploy == 'true'
+    runs-on: ubuntu-latest
+    needs: [detect_changes, gate_deploy]
+    environment: pr-deployment-change
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build frontend
+        run: pnpm --filter ./frontend run build
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: arn:aws:iam::671285285244:role/github-oidc-cdk-deploy
+          role-session-name: ${{ github.run_id }}-pr-deployment-change
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+
+      - name: Deploy PR preview stack
+        id: deploy
+        env:
+          PREVIEW_ENV_NAME: pr-${{ github.event.pull_request.number }}
+          DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
+          CLOUDFRONT_CERT_ARN: ${{ vars.CLOUDFRONT_CERT_ARN }}
+        run: pnpm --filter ./infra run cdk deploy --all --require-approval never --outputs-file "$GITHUB_WORKSPACE/cdk-outputs.json" -c environmentName="$PREVIEW_ENV_NAME" -c domainName="$DOMAIN_NAME" -c cloudFrontCertificateArn="$CLOUDFRONT_CERT_ARN"
+
+      - name: Resolve preview URL
+        id: preview-url
+        uses: actions/github-script@v8
+        env:
+          PREVIEW_ENV_NAME: pr-${{ github.event.pull_request.number }}
+          CDK_OUTPUTS_PATH: ${{ github.workspace }}/cdk-outputs.json
+        with:
+          script: |
+            const fs = require('node:fs')
+            const stackName = `InfraStack-${process.env.PREVIEW_ENV_NAME}`
+            const outputsPath = process.env.CDK_OUTPUTS_PATH
+            const fallbackPath = 'infra/cdk-outputs.json'
+            const resolvedOutputsPath = fs.existsSync(outputsPath)
+              ? outputsPath
+              : fs.existsSync(fallbackPath)
+                ? fallbackPath
+                : null
+
+            if (!resolvedOutputsPath) {
+              core.setFailed(`Unable to find CDK outputs file at '${outputsPath}' or '${fallbackPath}'`)
+              return
+            }
+            const outputs = JSON.parse(fs.readFileSync(resolvedOutputsPath, 'utf8'))
+
+            const stackOutputs = outputs[stackName] || {}
+            const urlEntry = Object.entries(stackOutputs).find(([key]) => key.endsWith('CloudFrontUrl'))
+            const previewUrl = urlEntry?.[1]
+
+            if (!previewUrl) {
+              core.setFailed(`Unable to find CloudFront URL output in ${resolvedOutputsPath} for stack ${stackName}`)
+              return
+            }
+
+            core.setOutput('preview_url', previewUrl)
+
+      - name: Comment preview URL on PR
+        uses: actions/github-script@v8
+        env:
+          PREVIEW_URL: ${{ steps.preview-url.outputs.preview_url }}
+        with:
+          script: |
+            const marker = '<!-- pr-preview-url -->'
+            const body = `${marker}\nPreview environment deployed: ${process.env.PREVIEW_URL}`
+
+            const comments = await github.paginate(
+              github.rest.issues.listComments,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                per_page: 100,
+              }
+            )
+
+            const existingComment = comments.find((comment) =>
+              (comment.body || '').includes(marker)
+            )
+
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existingComment.id,
+                body,
+              })
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body,
+              })
+            }
+
+      - name: Mark preview as deployed
+        uses: actions/github-script@v8
+        with:
+          script: |
+            await github.rest.issues.addLabels({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+              labels: ['preview-deployed'],
+            })
+
+  destroy_preview:
+    if: github.event.action == 'closed' && contains(github.event.pull_request.labels.*.name, 'preview-deployed')
+    runs-on: ubuntu-latest
+    environment: pr-preview-destroy
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: arn:aws:iam::671285285244:role/github-oidc-cdk-deploy
+          role-session-name: ${{ github.run_id }}-pr-preview-destroy
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+
+      - name: Destroy PR preview stack
+        env:
+          PREVIEW_ENV_NAME: pr-${{ github.event.pull_request.number }}
+          DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
+          CLOUDFRONT_CERT_ARN: ${{ vars.CLOUDFRONT_CERT_ARN }}
+        run: pnpm --filter ./infra run cdk destroy --all --force -c environmentName="$PREVIEW_ENV_NAME" -c domainName="$DOMAIN_NAME" -c cloudFrontCertificateArn="$CLOUDFRONT_CERT_ARN"

@@ -1,0 +1,32 @@
+[project]
+name = "merkos-rambam-pipeline"
+version = "0.1.0"
+description = "Content generation pipeline for Merkos Rambam"
+requires-python = ">=3.11"
+dependencies = [
+    "sqlalchemy>=2.0",
+    "psycopg2-binary>=2.9",
+    "alembic>=1.13",
+    "httpx>=0.27",
+    "pyyaml>=6.0",
+    "anthropic>=0.40",
+    "replicate>=0.34",
+    "python-telegram-bot>=21",
+    "twilio>=9",
+    "pydantic>=2.9",
+    "structlog>=24.4",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.7",
+]
+
+[tool.ruff]
+line-length = 100
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

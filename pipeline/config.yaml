@@ -1,0 +1,51 @@
+pipeline:
+  log_level: "INFO"
+  log_format: "json"
+
+transcription:
+  primary_provider: "sofer_ai"
+  timestamp_provider: "openai_whisper"
+
+sefaria:
+  base_url: "https://www.sefaria.org/api"
+  language: "he"
+  cache_ttl_days: 30
+
+text_alignment:
+  llm:
+    provider: "anthropic"
+    model: "claude-sonnet-4-20250514"
+
+artifact_planning:
+  llm:
+    provider: "anthropic"
+    model: "claude-sonnet-4-20250514"
+  max_artifacts_per_source_unit: 5
+  context_mode: "SYNTHESIZED"
+
+image_generation:
+  provider: "replicate"
+  replicate:
+    model: "black-forest-labs/flux-1.1-pro"
+  styles:
+    enabled:
+      - "photorealistic"
+      - "watercolor"
+      - "cartoon"
+      - "line_art"
+      - "oil_painting"
+    rotation: "random_per_image"
+    default: "photorealistic"
+
+telegram:
+  upvote_emoji: "\U0001F44D"
+  downvote_emoji: "\U0001F44E"
+  voting_window_hours: 24
+
+approval:
+  min_approval_percentage: 70
+  min_total_votes: 3
+
+whatsapp:
+  rate_limit_per_second: 20
+  max_retries: 3

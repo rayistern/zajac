@@ -1,0 +1,7 @@
+**/node_modules
+**/coverage
+**/dist
+**/cdk.out
+.git
+.gitignore
+README.md

@@ -1,0 +1,26 @@
+name: Branch Merge Gate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches:
+      - production
+      - staging
+
+jobs:
+  check-source-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify source branch for production target
+        if: github.base_ref == 'production' && github.head_ref != 'staging'
+        run: |
+          echo "PRs targeting 'production' must originate from the 'staging' branch."
+          echo "Source branch: ${{ github.head_ref }}"
+          exit 1
+
+      - name: Verify source branch for staging target
+        if: github.base_ref == 'staging' && github.head_ref != 'main'
+        run: |
+          echo "PRs targeting 'staging' must originate from the 'main' branch."
+          echo "Source branch: ${{ github.head_ref }}"
+          exit 1

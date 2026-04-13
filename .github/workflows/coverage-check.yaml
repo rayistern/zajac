@@ -1,0 +1,101 @@
+name: PR Coverage Gate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+jobs:
+  coverage:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run changed-package coverage gates
+        id: coverage_gate
+        continue-on-error: true
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: pnpm coverage:check
+
+      - name: Generate coverage report
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          node scripts/generate-coverage-report.mjs \
+            --package=api \
+            --coverageFile=api/coverage/coverage-summary.json \
+            --thresholds=statements=80 \
+            --output=coverage-report-api.md
+          node scripts/generate-coverage-report.mjs \
+            --package=frontend \
+            --coverageFile=frontend/coverage/coverage-summary.json \
+            --thresholds=statements=80 \
+            --output=coverage-report-frontend.md
+          cat coverage-report-api.md coverage-report-frontend.md > coverage-report.md
+
+      - name: Add coverage report PR comment
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require('node:fs');
+
+            const marker = '<!-- pr-coverage-report -->';
+            const reportBody = fs.readFileSync('coverage-report.md', 'utf8').trimEnd();
+            const body = `${marker}\n${reportBody}`;
+
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+
+            const existingComment = comments.find(
+              (comment) =>
+                comment.user?.type === 'Bot' &&
+                comment.user?.login === 'github-actions[bot]' &&
+                comment.body?.includes(marker),
+            );
+
+            if (existingComment) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existingComment.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }
+
+      - name: Fail workflow when gate fails
+        if: steps.coverage_gate.outcome == 'failure'
+        run: exit 1
