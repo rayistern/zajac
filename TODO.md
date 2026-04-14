@@ -1,96 +1,46 @@
 # Merkos Rambam — Task List
 
-**Last updated:** April 13, 2026
+> 🟢 **Active tracking has moved to GitHub Issues:** https://github.com/rayistern/zajac/issues
+>
+> This file is kept as a historical record of completed increments. Open work lives in issues.
 
 ---
 
-## Completed
+## Completed Increments
 
 - [x] **Inc 0: Project scaffold** — Monorepo with api, frontend, pipeline, infra workspaces (`6ae6a3c`)
-- [x] **Inc 1: API routes** — 6 Hono routes (content, rambam, sichos, share, preferences, webhook), Drizzle schema (6 tables), seed script (`6ae6a3c`)
-- [x] **Inc 2: Frontend components** — 12 React components (content cards, layout, navigation, share), dark theme, Hebrew fonts (`6ae6a3c`)
+- [x] **Inc 1: API routes** — 6 Hono routes, Drizzle schema (6 tables), seed script (`6ae6a3c`)
+- [x] **Inc 2: Frontend components** — 12 React components, dark theme, Hebrew fonts (`6ae6a3c`)
 - [x] **Inc 3: Audio player** — HTML5 audio with MiniPlayer (Spotify-style), AudioPlayerProvider context (`6ae6a3c`)
 - [x] **Inc 4: Share** — Web Share API with clipboard fallback, OG meta HTML endpoint (`6ae6a3c`)
-- [x] **Inc 5: PWA + Offline** — vite-plugin-pwa, Workbox caching (API, images, fonts), app manifest, SVG icons (`4dbc1e2`)
-- [x] **Inc 6: Content S3 + CDK** — S3 content bucket with CloudFront OAC, `/content-assets/*` behavior (`9523fe9`)
-- [x] **Inc 7: Python pipeline** — 13 modules (RSS ingester, dual transcriber, 4-pass LLM aligner, context synthesizer, artifact planner, image generator, Telegram poster, vote manager, reconciliation, WhatsApp sender, orchestrator), 18 SQLAlchemy tables, Alembic, CLI with run/status subcommands (`d40ae5b`, `9523fe9`)
-- [x] **Inc 8: WhatsApp webhook** — Twilio inbound handler: subscribe/unsubscribe/track change, TwiML responses, Hebrew keywords, phone hash storage (`4c27fd7`)
-- [x] **Inc 9: Polish** — Skeleton loaders, error/empty states, ARIA labels, focus-visible, Hebrew typography, prefers-reduced-motion (`03b50e1`)
-- [x] **PostHog analytics** — posthog-js in frontend, autocapture + pageviews, no-op without env var (`c20e350`)
-- [x] **Sentry error tracking** — @sentry/react (frontend error boundary) + @sentry/node (API), no-op without DSN (`c20e350`)
-- [x] **Org template compliance audit** — Verified 95%+ alignment with service-starter-template (`c70e533`)
-- [x] **Test suites** — API: 5 test files (content, preferences, sichos, share, webhook); Frontend: 7 test files, 23 tests passing (`c70e533`)
-- [x] **Spec docs committed** — PRODUCT_SPEC_FINAL, MASTER_PLAN, PHASE_2_3_SPEC, PRD v3, TRD v1, frontend spec, mockup-home (`d39b4b1`)
+- [x] **Inc 5: PWA + Offline** — vite-plugin-pwa, Workbox caching, app manifest (`4dbc1e2`)
+- [x] **Inc 6: Content S3 + CDK** — S3 content bucket with CloudFront OAC (`9523fe9`)
+- [x] **Inc 7: Python pipeline** — 13 modules, 18 SQLAlchemy tables, Alembic, CLI (`d40ae5b`, `9523fe9`)
+- [x] **Inc 8: WhatsApp webhook** — Twilio inbound handler with Hebrew keywords (`4c27fd7`)
+- [x] **Inc 9: Polish** — Skeleton loaders, error/empty states, ARIA, Hebrew typography (`03b50e1`)
+- [x] **PostHog + Sentry** — Analytics + error tracking, no-op without env vars (`c20e350`)
+- [x] **Org template compliance** — 95%+ aligned with service-starter-template (`c70e533`)
+- [x] **Test suites** — 27 API + 61 frontend + 68 pipeline = 156 tests, coverage 94.4%/90.2% (`c70e533`, `a344585`)
+- [x] **OpenRouter integration** — Single key routes LLM, images, and LLM-based audio (`7490229`, `e517ea0`)
+- [x] **Demo launcher** — `./scripts/demo.sh` one-command local stack (`a082964`)
+- [x] **Alembic migration** — Pipeline tables deployable via `alembic upgrade` (`ab0bd16`)
+- [x] **Sefaria end-to-end** — Fetched 27 real Rambam halachot (Marriage 2), synthesized to English via Claude
+- [x] **Image gen end-to-end** — Generated watercolor illustration via OpenRouter Gemini (2MB PNG in ~8s)
+- [x] **GitHub environments** — All 5 envs created (production, staging, pr-preview, pr-preview-destroy, pr-deployment-change)
+- [x] **GitHub Issues migrated** — All open tasks now tracked at https://github.com/rayistern/zajac/issues
 
 ---
 
-## In Progress / Next Up
+## Where to go for open work
 
-### Validation & Testing
-
-- [x] **Run API tests with Docker** — All 27 API tests pass with TestContainers (fixed preferences route bug and clearAll helper)
-- [x] **Check coverage percentages** — API: 94.4% lines, Frontend: 90.21% lines (both pass 80% threshold)
-- [x] **Add more tests if needed** — Expanded to 27 API + 61 frontend = 88 total tests
-
-### Pipeline Smoke Test
-
-- [x] **Install Python pipeline deps** — venv set up with all dependencies
-- [x] **Create Alembic initial migration** — Hand-written migration (001), 18 tables with proper FK ordering and seed data
-- [x] **Verify migration runs** — Applied successfully on Postgres 18 container, all 19 tables (18 + alembic_version) created, 4 artifact_types seeded
-- [x] **Verify CLI works** — `status` and `run` commands work; fixed structlog config bug
-- [x] **Register a test RSS class** — Chabad.org Rambam-3 feed registered, pulled 3 real episodes
-- [x] **Route LLM calls via OpenRouter** — llm.py wrapper routes to OpenRouter when key set, else Anthropic direct
-- [x] **Verify Sefaria fetch** — Pulled 27 halachot from "Marriage 2" in Hebrew via Sefaria API
-- [x] **Verify LLM synthesis** — Context synthesizer generated real English visual description via OpenRouter
-- [x] **Add Ashkenazic→Sephardic book name mapping** — Maps "Ishus" → "Marriage" for Chabad feed compatibility
-- [x] **Image gen via OpenRouter** — google/gemini-2.5-flash-image default, verified end-to-end (2MB PNG in ~8s)
-- [x] **Transcription with synthetic timestamps** — sofer.ai primary + uniform distribution across audio duration (ffprobe); no OpenAI key required
-- [x] **Save sofer.ai key globally** — SOFER_AI_API_KEY in ~/.bashrc
-- [x] **Pipeline test coverage** — 68 Python tests, discovered + fixed SequenceMatcher merge bug
-- [ ] **Full pipeline end-to-end with real audio** — Download a Chabad.org RSS episode and run through sofer.ai → alignment → image gen → Telegram (Telegram deferred)
-- [ ] **Add ffmpeg to pipeline Dockerfile** — Needed for audio duration probe in synthetic transcription mode
-- [ ] **Telegram + Twilio** — Deferred by user
-
-### Demo (Local, No AWS)
-
-- [x] **scripts/demo.sh launcher** — one-command full-stack demo
-- [x] **DEMO.md with instructions** — including SSH forwarding for headless servers
-- [x] **Fix .env.dev and pg connection** — was broken (host:port concatenated as hostname)
-- [x] **Date-relative seed** — seeds today/yesterday/tomorrow automatically
-
-### Infrastructure & Deployment
-
-- [ ] **Set up AWS credentials** — Configure OIDC trust policy for GitHub Actions
-- [ ] **Deploy CDK stack to staging** — `npx cdk deploy --context environmentName=staging`
-- [ ] **Configure secrets** — Set API keys in AWS Secrets Manager or env vars (sofer.ai, OpenAI, Anthropic, Replicate, Telegram, Twilio)
-- [ ] **Set frontend build env vars** — VITE_POSTHOG_KEY, VITE_SENTRY_DSN
-- [ ] **Set API env vars** — SENTRY_DSN in ECS task definition
-- [ ] **Custom domain + SSL** — ACM certificate, Route53 records, CloudFront alias
-- [ ] **Push to staging** — Merge main → test branch, verify deploy-staging workflow runs
-- [ ] **Push to production** — Merge test → production branch after staging validation
-
-### Content & Editorial Setup
-
-- [ ] **Create Telegram voting group** — Set up group, get chat ID, configure bot
-- [ ] **Recruit editorial reviewers** — 6-10 volunteers for daily content review
-- [ ] **Seed initial content** — Run `npx tsx --env-file=api/.env.dev api/scripts/seed-content.ts` with real content
-- [ ] **Set up WhatsApp Business** — Twilio account, phone number, template messages
-
-### GitHub Configuration
-
-- [ ] **Create branch protections** — For `staging` and `production` branches (needs admin settings in GitHub UI)
-- [x] **Create GitHub Environments** — All 5 created: production, staging, pr-preview, pr-preview-destroy, pr-deployment-change
-- [x] **Create deployment branches** — staging, production, test branches created from main
-- [x] **Configure Actions variables** — AWS_REGION set to us-east-1; DOMAIN_NAME and CLOUDFRONT_CERT_ARN need values from Rayi
-- [ ] **Update CODEOWNERS** — Assign actual team members
-
----
-
-## Future (Phase 1.5+)
-
-- [ ] **Voice chatbot ("Raise Hand")** — STT → LLM → TTS, scoped to today's learning (Phase 1.5)
-- [ ] **Quiz / review questions** — Per-perek questions generated by LLM (Phase 1.5)
-- [ ] **Bookmarks / notes** — Save content items for later review (Phase 1.5)
-- [ ] **Sefer Hamitzvos mapping** — Daily mitzvah cross-reference (Phase 1.5)
-- [ ] **Immersive player** — Synced artifacts + source text + audio/video, Main Zone / Artifact Tray / Text Panel (Phase 2)
-- [ ] **Full voice chatbot** — Context-aware, integrated into immersive player (Phase 3)
+- **Active issues:** https://github.com/rayistern/zajac/issues
+- **Labels:**
+  - `pipeline` — content generation pipeline
+  - `api` — Hono backend
+  - `frontend` — React PWA
+  - `infra` — AWS CDK + GitHub Actions
+  - `testing` — test coverage, CI
+  - `content` — editorial, WhatsApp, seed data
+  - `blocked` — waiting on external dependency (AWS creds, API keys, team input)
+  - `deferred` — intentionally postponed for later phases
+  - `phase-1.5` / `phase-2` — future work aligned with product spec phases
