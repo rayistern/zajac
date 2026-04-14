@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import os
+import subprocess
 from difflib import SequenceMatcher
 from pathlib import Path
 
@@ -15,13 +17,39 @@ from .db import Episode, Transcript
 logger = structlog.get_logger()
 
 
+def _probe_audio_duration_ms(audio_path: str) -> int | None:
+    """Probe audio duration in milliseconds via ffprobe, returning None on failure."""
+    try:
+        result = subprocess.run(
+            [
+                "ffprobe", "-v", "error",
+                "-show_entries", "format=duration",
+                "-of", "default=noprint_wrappers=1:nokey=1",
+                audio_path,
+            ],
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return int(float(result.stdout.strip()) * 1000)
+    except (subprocess.SubprocessError, FileNotFoundError, ValueError):
+        pass
+    return None
+
+
 class DualTranscriber:
     def __init__(self, config: TranscriptionConfig, session: Session):
         self.config = config
         self.db = session
 
     def transcribe(self, episode: Episode, audio_path: str) -> Transcript:
-        """Run dual transcription and merge results."""
+        """Run dual transcription and merge results.
+
+        If config.timestamp_provider is 'synthetic' or OPENAI_API_KEY is not set,
+        skips Whisper and produces synthetic word-level timestamps by distributing
+        words proportionally across the audio duration.
+        """
         existing = (
             self.db.query(Transcript)
             .filter_by(episode_id=episode.id, transcript_type="merged")
@@ -32,10 +60,56 @@ class DualTranscriber:
             return existing
 
         primary = self._transcribe_primary(episode, audio_path)
-        timestamped = self._transcribe_timestamps(episode, audio_path)
-        merged = self._merge_transcripts(episode, primary, timestamped)
+
+        use_whisper = (
+            self.config.timestamp_provider == "openai_whisper"
+            and os.environ.get("OPENAI_API_KEY")
+        )
+
+        if use_whisper:
+            timestamped = self._transcribe_timestamps(episode, audio_path)
+            merged = self._merge_transcripts(episode, primary, timestamped)
+        else:
+            merged = self._synthetic_merge(episode, primary, audio_path)
 
         return merged
+
+    def _synthetic_merge(
+        self, episode: Episode, primary: Transcript, audio_path: str
+    ) -> Transcript:
+        """Build a merged transcript using sofer.ai text + synthetic per-word timestamps.
+
+        Timestamps are computed by distributing primary words uniformly across
+        the audio duration. This is a best-effort fallback when Whisper isn't
+        available; accurate enough for text alignment to source units.
+        """
+        words = (primary.full_text or "").split()
+        duration_ms = _probe_audio_duration_ms(audio_path) or max(len(words) * 400, 1)
+
+        merged_words = []
+        n = len(words)
+        for i, w in enumerate(words):
+            start = int(duration_ms * i / max(n, 1))
+            end = int(duration_ms * (i + 1) / max(n, 1))
+            merged_words.append({"word": w, "start_ms": start, "end_ms": end})
+
+        transcript = Transcript(
+            episode_id=episode.id,
+            transcript_type="merged",
+            provider="sofer_ai+synthetic",
+            full_text=primary.full_text or "",
+            words=merged_words,
+            language="he",
+        )
+        self.db.add(transcript)
+        self.db.flush()
+        logger.info(
+            "transcriber.synthetic_merged",
+            episode_id=episode.id,
+            word_count=n,
+            duration_ms=duration_ms,
+        )
+        return transcript
 
     def _transcribe_primary(self, episode: Episode, audio_path: str) -> Transcript:
         """Transcribe with sofer.ai for accurate Hebrew text."""
@@ -47,7 +121,6 @@ class DualTranscriber:
         if existing:
             return existing
 
-        import os
         api_key = os.environ.get("SOFER_AI_API_KEY", "")
 
         with open(audio_path, "rb") as f:
@@ -83,7 +156,6 @@ class DualTranscriber:
         if existing:
             return existing
 
-        import os
         api_key = os.environ.get("OPENAI_API_KEY", "")
 
         with open(audio_path, "rb") as f:

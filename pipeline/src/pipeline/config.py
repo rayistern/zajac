@@ -17,7 +17,9 @@ class LLMConfig(BaseModel):
 
 class TranscriptionConfig(BaseModel):
     primary_provider: str = "sofer_ai"
-    timestamp_provider: str = "openai_whisper"
+    # "openai_whisper" requires OPENAI_API_KEY; "synthetic" estimates
+    # timestamps by distributing words proportionally across the audio.
+    timestamp_provider: str = "synthetic"
 
 
 class SefariaConfig(BaseModel):
@@ -50,8 +52,13 @@ class ReplicateConfig(BaseModel):
     model: str = "black-forest-labs/flux-1.1-pro"
 
 
+class OpenRouterImageConfig(BaseModel):
+    model: str = "google/gemini-2.5-flash-image"
+
+
 class ImageGenerationConfig(BaseModel):
-    provider: str = "replicate"
+    provider: str = "openrouter"  # "openrouter" or "replicate"
+    openrouter: OpenRouterImageConfig = Field(default_factory=OpenRouterImageConfig)
     replicate: ReplicateConfig = Field(default_factory=ReplicateConfig)
     styles: StylesConfig = Field(default_factory=StylesConfig)
 
