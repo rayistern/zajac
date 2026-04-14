@@ -38,9 +38,20 @@
 - [x] **Create Alembic initial migration** — Hand-written migration (001), 18 tables with proper FK ordering and seed data
 - [x] **Verify migration runs** — Applied successfully on Postgres 18 container, all 19 tables (18 + alembic_version) created, 4 artifact_types seeded
 - [x] **Verify CLI works** — `status` and `run` commands work; fixed structlog config bug
-- [ ] **Register a test RSS class** — Insert a Class record with an RSS feed URL (BLOCKED: need real RSS feed URL from Rayi)
-- [ ] **Run pipeline end-to-end** — (BLOCKED: needs API keys for sofer.ai, OpenAI, Anthropic, Replicate)
+- [x] **Register a test RSS class** — Chabad.org Rambam-3 feed registered, pulled 3 real episodes
+- [x] **Route LLM calls via OpenRouter** — llm.py wrapper routes to OpenRouter when key set, else Anthropic direct
+- [x] **Verify Sefaria fetch** — Pulled 27 halachot from "Marriage 2" in Hebrew via Sefaria API
+- [x] **Verify LLM synthesis** — Context synthesizer generated real English visual description via OpenRouter
+- [x] **Add Ashkenazic→Sephardic book name mapping** — Maps "Ishus" → "Marriage" for Chabad feed compatibility
+- [ ] **Full pipeline end-to-end** — (BLOCKED: needs API keys for sofer.ai transcription + Replicate images)
 - [ ] **Validate generated artifacts** — (BLOCKED: depends on end-to-end run)
+
+### Demo (Local, No AWS)
+
+- [x] **scripts/demo.sh launcher** — one-command full-stack demo
+- [x] **DEMO.md with instructions** — including SSH forwarding for headless servers
+- [x] **Fix .env.dev and pg connection** — was broken (host:port concatenated as hostname)
+- [x] **Date-relative seed** — seeds today/yesterday/tomorrow automatically
 
 ### Infrastructure & Deployment
 
