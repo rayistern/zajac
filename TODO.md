@@ -43,8 +43,13 @@
 - [x] **Verify Sefaria fetch** — Pulled 27 halachot from "Marriage 2" in Hebrew via Sefaria API
 - [x] **Verify LLM synthesis** — Context synthesizer generated real English visual description via OpenRouter
 - [x] **Add Ashkenazic→Sephardic book name mapping** — Maps "Ishus" → "Marriage" for Chabad feed compatibility
-- [ ] **Full pipeline end-to-end** — (BLOCKED: needs API keys for sofer.ai transcription + Replicate images)
-- [ ] **Validate generated artifacts** — (BLOCKED: depends on end-to-end run)
+- [x] **Image gen via OpenRouter** — google/gemini-2.5-flash-image default, verified end-to-end (2MB PNG in ~8s)
+- [x] **Transcription with synthetic timestamps** — sofer.ai primary + uniform distribution across audio duration (ffprobe); no OpenAI key required
+- [x] **Save sofer.ai key globally** — SOFER_AI_API_KEY in ~/.bashrc
+- [x] **Pipeline test coverage** — 68 Python tests, discovered + fixed SequenceMatcher merge bug
+- [ ] **Full pipeline end-to-end with real audio** — Download a Chabad.org RSS episode and run through sofer.ai → alignment → image gen → Telegram (Telegram deferred)
+- [ ] **Add ffmpeg to pipeline Dockerfile** — Needed for audio duration probe in synthetic transcription mode
+- [ ] **Telegram + Twilio** — Deferred by user
 
 ### Demo (Local, No AWS)
 
