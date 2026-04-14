@@ -9,13 +9,20 @@ import { Pool } from "pg";
 import { learningDays, contentItems, sichosReferences } from "../src/schema";
 
 const pool = new Pool({
-  host: process.env.DB_HOST ?? "localhost:5432",
+  host: process.env.DB_HOST ?? "127.0.0.1",
+  port: parseInt(process.env.DB_PORT ?? "5432", 10),
   database: process.env.DB_NAME ?? "app",
   user: process.env.DB_USER ?? "postgres",
   password: process.env.DB_PASS ?? "postgres",
 });
 
 const db = drizzle({ client: pool });
+
+function daysFromToday(offset: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  return d.toISOString().split("T")[0];
+}
 
 async function seed() {
   console.log("Seeding database...");
@@ -24,8 +31,8 @@ async function seed() {
   const [day1] = await db
     .insert(learningDays)
     .values({
-      date: "2026-04-05",
-      hebrewDate: "5 Nissan 5786",
+      date: daysFromToday(0),
+      hebrewDate: "Today",
       track1Perakim: [{ sefer: "Beis HaBechirah", perek: 1 }],
       track3Perakim: [
         { sefer: "Beis HaBechirah", perek: 1 },
@@ -213,8 +220,8 @@ async function seed() {
   const [day2] = await db
     .insert(learningDays)
     .values({
-      date: "2026-04-06",
-      hebrewDate: "6 Nissan 5786",
+      date: daysFromToday(1),
+      hebrewDate: "Tomorrow",
       track1Perakim: [{ sefer: "Beis HaBechirah", perek: 2 }],
       track3Perakim: [
         { sefer: "Beis HaBechirah", perek: 4 },
@@ -273,8 +280,8 @@ async function seed() {
   const [day3] = await db
     .insert(learningDays)
     .values({
-      date: "2026-04-07",
-      hebrewDate: "7 Nissan 5786",
+      date: daysFromToday(-1),
+      hebrewDate: "Yesterday",
       track1Perakim: [{ sefer: "Beis HaBechirah", perek: 3 }],
       track3Perakim: [
         { sefer: "Beis HaBechirah", perek: 7 },

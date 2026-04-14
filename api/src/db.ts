@@ -5,6 +5,7 @@ import * as schema from "./schema";
 
 export const connectionConfig: PoolConfig = {
   host: env.DB_HOST,
+  port: env.DB_PORT,
   database: env.DB_NAME,
   user: env.DB_USER,
   password: env.DB_PASS,
