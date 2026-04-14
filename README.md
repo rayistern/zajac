@@ -8,29 +8,16 @@ A mobile-first Progressive Web App for daily Rambam learning with AI-generated v
 
 ## Quick Start
 
+**One-command demo** (runs Postgres + API + frontend locally, no AWS needed):
+
 ```bash
-# Prerequisites: Node.js 20+, pnpm 10+, Docker
-
-# 1. Start local PostgreSQL
-docker compose up -d
-
-# 2. Install dependencies
 pnpm install
-
-# 3. Generate database migration (if schema changed)
-pnpm --filter api run kit generate
-
-# 4. Start API (port 3000)
-cd api && node --env-file=.env.dev --import=tsx src/index.ts
-
-# 5. Start frontend (port 5173, proxies /api/* to :3000)
-pnpm --filter frontend run dev
-
-# 6. Seed sample content (requires running DB)
-cd api && npx tsx --env-file=.env.dev scripts/seed-content.ts
+./scripts/demo.sh
 ```
 
-The app will be available at `http://localhost:5173`.
+Open http://localhost:5173 in a browser.
+
+For headless servers and detailed troubleshooting, see **[DEMO.md](./DEMO.md)**.
 
 ---
 
