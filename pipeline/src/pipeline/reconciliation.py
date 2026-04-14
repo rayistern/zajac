@@ -5,11 +5,11 @@ from __future__ import annotations
 import json
 from datetime import datetime, timedelta
 
-import anthropic
 import structlog
 from sqlalchemy.orm import Session
 
 from .db import Artifact, ArtifactVersion, ReconciliationFlag, SourceUnit
+from .llm import LLMClient
 
 logger = structlog.get_logger()
 
@@ -19,7 +19,7 @@ class ReconciliationEngine:
         self.model = model
         self.require_human_approval = require_human_approval
         self.db = session
-        self.client = anthropic.Anthropic()
+        self.client = LLMClient(model)
 
     def audit(self, source_unit: SourceUnit) -> list[ReconciliationFlag]:
         """Audit all artifacts for a source unit for lifecycle issues."""
@@ -108,13 +108,7 @@ Return a JSON array of duplicate pairs:
 
 Return [] if no duplicates found."""
 
-        resp = self.client.messages.create(
-            model=self.model,
-            max_tokens=1024,
-            messages=[{"role": "user", "content": prompt}],
-        )
-
-        duplicates = self._parse_json(resp.content[0].text)
+        duplicates = self._parse_json(self.client.complete(prompt, max_tokens=1024))
         flags = []
         for dup in duplicates:
             flags.append(ReconciliationFlag(

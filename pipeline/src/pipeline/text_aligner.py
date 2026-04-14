@@ -5,12 +5,12 @@ from __future__ import annotations
 import json
 import re
 
-import anthropic
 import structlog
 from sqlalchemy.orm import Session
 
 from .config import TextAlignmentConfig
 from .db import Alignment, SourceUnit, Transcript
+from .llm import LLMClient
 
 logger = structlog.get_logger()
 
@@ -19,7 +19,7 @@ class TextAligner:
     def __init__(self, config: TextAlignmentConfig, session: Session):
         self.config = config
         self.db = session
-        self.client = anthropic.Anthropic()
+        self.client = LLMClient(config.llm.model)
         self.model = config.llm.model
 
     def align(
@@ -127,12 +127,7 @@ Return JSON array of detected headers:
 
 Only return headers you are confident about. Return [] if none found."""
 
-        resp = self.client.messages.create(
-            model=self.model,
-            max_tokens=1024,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        llm_headers = self._parse_json_response(resp.content[0].text)
+        llm_headers = self._parse_json_response(self.client.complete(prompt, max_tokens=1024))
 
         # Merge regex and LLM results
         headers = []
@@ -193,12 +188,7 @@ Return JSON array:
   "method": "content_match"
 }}]"""
 
-        resp = self.client.messages.create(
-            model=self.model,
-            max_tokens=2048,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        matches = self._parse_json_response(resp.content[0].text)
+        matches = self._parse_json_response(self.client.complete(prompt, max_tokens=2048))
 
         # Convert percentages to milliseconds
         if words:
@@ -240,12 +230,7 @@ For each alignment, verify:
 Return the corrected JSON array with the same structure. Adjust confidence scores
 and flags as needed. Remove any alignments that are clearly wrong."""
 
-        resp = self.client.messages.create(
-            model=self.model,
-            max_tokens=2048,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        return self._parse_json_response(resp.content[0].text)
+        return self._parse_json_response(self.client.complete(prompt, max_tokens=2048))
 
     def _parse_json_response(self, text: str) -> list[dict]:
         """Extract JSON array from LLM response text."""

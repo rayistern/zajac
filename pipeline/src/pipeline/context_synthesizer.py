@@ -4,11 +4,11 @@ from __future__ import annotations
 
 import hashlib
 
-import anthropic
 import structlog
 from sqlalchemy.orm import Session
 
 from .db import Alignment, ContextSynthesis, SourceUnit, Transcript
+from .llm import LLMClient
 
 logger = structlog.get_logger()
 
@@ -17,7 +17,7 @@ class ContextSynthesizer:
     def __init__(self, model: str, session: Session):
         self.model = model
         self.db = session
-        self.client = anthropic.Anthropic()
+        self.client = LLMClient(model)
 
     def get_context(
         self,
@@ -87,12 +87,7 @@ that could be visually represented.
 Write a 2-3 sentence synthesis in English that captures the visual essence of this halacha.
 Focus on concrete, depictable elements. Do not include any Hebrew text in your response."""
 
-        resp = self.client.messages.create(
-            model=self.model,
-            max_tokens=512,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        synthesis_text = resp.content[0].text.strip()
+        synthesis_text = self.client.complete(prompt, max_tokens=512).strip()
 
         synthesis = ContextSynthesis(
             source_unit_id=source_unit.id,

@@ -5,12 +5,12 @@ from __future__ import annotations
 import json
 from datetime import datetime
 
-import anthropic
 import structlog
 from sqlalchemy.orm import Session
 
 from .config import ArtifactPlanningConfig
 from .db import Artifact, ArtifactPlan, ArtifactType, SourceUnit
+from .llm import LLMClient
 
 logger = structlog.get_logger()
 
@@ -19,7 +19,7 @@ class ArtifactPlanner:
     def __init__(self, config: ArtifactPlanningConfig, session: Session):
         self.config = config
         self.db = session
-        self.client = anthropic.Anthropic()
+        self.client = LLMClient(config.llm.model)
         self.model = config.llm.model
 
     def plan(
@@ -79,12 +79,7 @@ Return JSON array:
 [{{"type": "image", "subtype": "illustration", "priority": 1, "position": 0.3,
    "reason": "...", "prompt_focus": "...", "context_mode": "SYNTHESIZED"}}]"""
 
-        resp = self.client.messages.create(
-            model=self.model,
-            max_tokens=2048,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        plan_items = self._parse_json_response(resp.content[0].text)
+        plan_items = self._parse_json_response(self.client.complete(prompt, max_tokens=2048))
 
         # Supersede old plan if exists
         if active_plan:
