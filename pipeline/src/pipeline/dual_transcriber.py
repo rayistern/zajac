@@ -150,14 +150,20 @@ class DualTranscriber:
                     t_start = start + int((end - start) * k / max(n, 1))
                     t_end = start + int((end - start) * (k + 1) / max(n, 1))
                     merged_words.append({"word": word, "start_ms": t_start, "end_ms": t_end})
-            elif op == "insert":
-                # Words only in primary (no timestamps available) — interpolate
+            elif op == "delete":
+                # Words in primary but not in whisper — interpolate from
+                # last known timestamp. SequenceMatcher semantics: 'delete'
+                # means a[i1:i2] has items, b[j1:j2] is empty.
                 if merged_words:
                     last_end = merged_words[-1]["end_ms"]
                 else:
                     last_end = 0
                 for word in primary_words[i1:i2]:
                     merged_words.append({"word": word, "start_ms": last_end, "end_ms": last_end})
+            elif op == "insert":
+                # Whisper has words primary doesn't. Primary is source of
+                # truth for text, so drop these.
+                pass
 
         merged_text = " ".join(w["word"] for w in merged_words)
 
