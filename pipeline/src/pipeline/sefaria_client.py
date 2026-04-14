@@ -13,6 +13,44 @@ from .db import SourceUnit, Work
 
 logger = structlog.get_logger()
 
+# Ashkenazic → Sefaria (Sephardic/English) name mapping for Rambam books.
+# Chabad.org RSS feed uses Ashkenazic transliteration; Sefaria expects Sephardic.
+RAMBAM_BOOK_ALIASES = {
+    "Ishus": "Marriage",
+    "Ishut": "Marriage",
+    "Gerushin": "Divorce",
+    "Yibum v'Chalitzah": "Levirate Marriage and Release",
+    "Na'arah Besulah": "Virgin Maiden",
+    "Sotah": "Sotah",
+    "Issurei Biah": "Forbidden Intercourse",
+    "Maachalos Asuros": "Forbidden Foods",
+    "Shechitah": "Ritual Slaughter",
+    "Shevuos": "Oaths",
+    "Nedarim": "Vows",
+    "Nezirus": "Nazariteship",
+    "Shabbat": "Shabbat",
+    "Shabbos": "Shabbat",
+    "Eruvin": "Eruvin",
+    "Megillah v'Chanukah": "Scroll of Esther and Hanukkah",
+    "Ta'aniyos": "Fasts",
+    "Kiddush HaChodesh": "Sanctification of the New Month",
+    "Beis HaBechirah": "The Chosen House",
+    "Klei HaMikdash": "Temple Vessels",
+    "Biat HaMikdash": "Entrance into the Sanctuary",
+    "Issurei Mizbe'ach": "Forbidden Altar Offerings",
+    "Ma'aseh HaKorbanos": "Manner of Offering Sacrifices",
+    "Temidin u'Musafin": "Daily Offerings and Additional Offerings",
+    "Pesulei HaMukdashin": "Disqualified Consecrated Items",
+    "Avodas Yom HaKippurim": "Service of Yom Kippur",
+    "Me'ilah": "Trespass",
+    # Add more as needed
+}
+
+
+def normalize_book_name(name: str) -> str:
+    """Convert Ashkenazic/colloquial book name to Sefaria's canonical name."""
+    return RAMBAM_BOOK_ALIASES.get(name, name)
+
 
 class SefariaClient:
     def __init__(self, config: SefariaConfig, session: Session):
