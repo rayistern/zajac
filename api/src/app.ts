@@ -7,6 +7,7 @@ import { sichosRoutes } from "./routes/sichos";
 import { shareRoutes } from "./routes/share";
 import { preferencesRoutes } from "./routes/preferences";
 import { webhookRoutes } from "./routes/webhook";
+import { flagsRoutes } from "./routes/flags";
 
 const app = (new OpenAPIHono().use("*", cors()) as OpenAPIHono)
   .openapi(
@@ -28,6 +29,7 @@ const app = (new OpenAPIHono().use("*", cors()) as OpenAPIHono)
   .route("/api/share", shareRoutes)
   .route("/api/preferences", preferencesRoutes)
   .route("/api/webhook", webhookRoutes)
+  .route("/api/flags", flagsRoutes)
   .doc("/doc", {
     openapi: "3.0.0",
     servers: [
