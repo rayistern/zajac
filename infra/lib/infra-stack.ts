@@ -11,6 +11,7 @@ import * as rds from "aws-cdk-lib/aws-rds";
 // import * as route53 from "aws-cdk-lib/aws-route53";
 // import * as route53Targets from "aws-cdk-lib/aws-route53-targets";
 import * as s3 from "aws-cdk-lib/aws-s3";
+import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
 import { ContentStorage } from "./components/content-storage";
 import { FrontendDistribution } from "./components/frontend-distribution";
 import { RdsDatabase } from "./components/database";
@@ -19,6 +20,20 @@ export interface InfraStackProps extends StackProps {
   environmentName: string;
   domainName?: string;
   cloudFrontCertificateArn?: string;
+  /**
+   * ARN (or name) of a Secrets Manager secret whose ``SecretString`` is the
+   * raw Vercel AI Gateway key. The secret MUST be pre-created in the target
+   * account before deploy — the stack only references it. The gateway is
+   * the single upstream for every AI call Phase 1.5 makes (chatbot,
+   * summarisation, quiz generation), so missing this key = silent failure
+   * at runtime.
+   *
+   * When omitted, the container simply won't have ``AI_GATEWAY_API_KEY``
+   * set, and ``api/src/lib/ai/providers.ts`` will fail fast on the first
+   * request. This is intentional: deploy should be loud about unconfigured
+   * AI.
+   */
+  aiGatewaySecretArn?: string;
 }
 
 export class InfraStack extends Stack {
@@ -147,6 +162,21 @@ export class InfraStack extends Stack {
               database.secret!,
               "password",
             ),
+            // AI_GATEWAY_API_KEY is optional at the CDK level (preview envs
+            // may not have one wired up) but required at runtime for any AI
+            // feature. If the ARN isn't provided we just skip the mapping so
+            // the task definition still deploys cleanly.
+            ...(props.aiGatewaySecretArn
+              ? {
+                  AI_GATEWAY_API_KEY: ecs.Secret.fromSecretsManager(
+                    secretsmanager.Secret.fromSecretCompleteArn(
+                      this,
+                      `${projectConstructId}AiGatewaySecret`,
+                      props.aiGatewaySecretArn,
+                    ),
+                  ),
+                }
+              : {}),
           },
           logDriver: ecs.LogDrivers.awsLogs({
             streamPrefix: `${projectName}-api-${props.environmentName}`,

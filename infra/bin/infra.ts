@@ -17,6 +17,13 @@ const domainName = app.node.tryGetContext("domainName");
 const cloudFrontCertificateArn = app.node.tryGetContext(
   "cloudFrontCertificateArn",
 );
+// Pre-created Secrets Manager ARN for the Vercel AI Gateway key. Pass via
+// `cdk deploy -c aiGatewaySecretArn=arn:aws:secretsmanager:...` OR via the
+// AI_GATEWAY_SECRET_ARN env var in CI. The secret value itself MUST already
+// exist before deploy — we only wire the reference.
+const aiGatewaySecretArn =
+  app.node.tryGetContext("aiGatewaySecretArn") ??
+  process.env.AI_GATEWAY_SECRET_ARN;
 const stackId = `InfraStack-${normalizedEnvironmentName}`;
 
 const infraStack = new InfraStack(app, stackId, {
@@ -24,6 +31,7 @@ const infraStack = new InfraStack(app, stackId, {
   environmentName: normalizedEnvironmentName,
   domainName,
   cloudFrontCertificateArn,
+  aiGatewaySecretArn,
 });
 
 // Tag all resources for cost tracking
