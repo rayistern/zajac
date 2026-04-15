@@ -26,7 +26,12 @@ from .db import Artifact, ArtifactVersion, SourceUnit
 logger = structlog.get_logger()
 
 
-# Map pipeline artifact subtype → frontend content_type
+# Map pipeline artifact subtype → frontend content_type.
+#
+# Must stay in sync with the CHECK constraint in
+# pipeline/alembic/versions/002_phase_1_5_foundations.py
+# (ck_artifacts_subtype_allowed). Adding a new subtype = new entry here
+# AND new migration extending the allow-list.
 SUBTYPE_TO_CONTENT_TYPE: dict[str, str] = {
     "illustration": "conceptual_image",
     "diagram": "conceptual_image",
@@ -34,6 +39,7 @@ SUBTYPE_TO_CONTENT_TYPE: dict[str, str] = {
     "chart": "daily_chart",
     "timeline": "daily_chart",
     "map": "conceptual_image",
+    "quiz": "quiz",
 }
 
 
