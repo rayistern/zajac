@@ -57,3 +57,7 @@ npx tsx --env-file=api/.env.dev api/scripts/seed-content.ts  # Seed sample data
 ## Branch strategy
 
 `test` branch → staging deploy, `production` branch → production deploy. PRs use `/deploy` comment for preview environments.
+
+## GitHub auth
+
+Private `merkos-302` repos require the `rayiMerkos` gh account. The default active account (`rayistern`) can't see them. Run `gh auth switch --user rayiMerkos` before any `gh` command that touches org-private repos.
