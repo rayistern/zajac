@@ -22,9 +22,10 @@ The switch is driven by `isTestEnvironment` — which is true whenever
 - `src/lib/ai/providers.ts` — exports `myProvider`. In test mode it
   returns a `customProvider` wired up to the mocks below; in prod it
   returns a `customProvider` wired up to `gateway("anthropic/…")`, etc.
-- `src/lib/ai/models.mock.ts` — the mock `LanguageModelV2` instances.
-  Built on top of `MockLanguageModelV2` from `ai/test` so they speak the
-  exact v2 protocol the rest of the SDK expects.
+- `src/lib/ai/models.mock.ts` — the mock `LanguageModel` instances.
+  Hand-rolls the v2 spec shape from runtime-safe pieces of the `ai`
+  main entry (no `ai/test`, no `msw`) so the file is safe to ship in
+  the production image — it's imported but never invoked outside tests.
 - `tests/prompts/utils.ts` — helpers for building mock stream chunks
   (`textToDeltas`, `getResponseChunksByPrompt`). This file is the
   canonical place to add prompt-specific canned responses as we grow
@@ -34,8 +35,8 @@ The switch is driven by `isTestEnvironment` — which is true whenever
 
 1. Add an entry to **both** branches of `customProvider({ languageModels })`
    in `providers.ts` — the logical id must be identical in test and prod.
-2. Export a new `MockLanguageModelV2` in `models.mock.ts` and register
-   it in the test branch.
+2. Call `createMockModel({ generateText, streamChunks? })` in
+   `models.mock.ts`, export it, and register it in the test branch.
 3. Add at least one regression test asserting both `doGenerate` and
    `doStream` paths work (see `tests/providers.test.ts`).
 

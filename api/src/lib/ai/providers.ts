@@ -53,10 +53,10 @@ export { gateway };
  * all other environments it resolves to the Vercel AI Gateway instance.
  *
  * Note on imports: we top-level-import ``models.mock`` rather than
- * lazy-loading it. The API runs via ``tsx``/``node`` (no bundler), so the
- * mock file is harmless in production — it's just never invoked. If we
- * ever introduce a production bundle step we should switch this to a
- * dynamic ``import()`` so the mock and its ``ai/test`` dep get tree-shaken.
+ * lazy-loading it. The mock hand-rolls a ``LanguageModel`` from
+ * runtime-safe pieces of the ``ai`` main entry (no ``ai/test``, no
+ * ``msw``) so it's harmless to ship in the production image — the
+ * ``isTestEnvironment`` branch simply never invokes it.
  */
 export const myProvider = isTestEnvironment
   ? customProvider({
